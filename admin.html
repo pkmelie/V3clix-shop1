@@ -3,371 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admin - Pack Builder</title>
+    <title>V3Clix Admin</title>
+    <link rel="icon" href="data:,">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
         }
-
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
             background: white;
-            padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
             margin-bottom: 30px;
             text-align: center;
         }
-
-        .admin-section {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+        .login-section, .dashboard-section {
+            display: none;
         }
-
-        .admin-section h2 {
-            color: #f5576c;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
+        .login-section.active, .dashboard-section.active {
+            display: block;
         }
-
         .form-group {
             margin-bottom: 20px;
         }
-
-        .form-group label {
+        label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
             color: #333;
+            font-weight: 600;
         }
-
-        .form-group input,
-        .form-group select {
+        input {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px;
+            transition: border-color 0.3s;
         }
-
-        .btn {
-            padding: 12px 30px;
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             border: none;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s;
         }
-
-        .btn:hover {
+        button:hover {
             transform: translateY(-2px);
         }
-
-        .btn-primary {
+        button:active {
+            transform: translateY(0);
+        }
+        .logout-btn {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .client-list,
-        .file-list {
             margin-top: 20px;
         }
-
-        .list-item {
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error.show {
+            display: block;
+        }
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success.show {
+            display: block;
+        }
+        #files-container {
+            margin-top: 20px;
+        }
+        .file-item {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-left: 4px solid #667eea;
         }
-
-        .token-display {
-            font-family: monospace;
-            background: #e9ecef;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 12px;
-            word-break: break-all;
+        .file-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
         }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .tab {
-            padding: 15px 30px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
+        .file-item p {
             color: #666;
-            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            margin: 3px 0;
         }
-
-        .tab.active {
-            color: #f5576c;
-            border-bottom-color: #f5576c;
-        }
-
-        .tab-content {
+        .loading {
+            text-align: center;
+            color: #667eea;
             display: none;
         }
-
-        .tab-content.active {
+        .loading.show {
             display: block;
-        }
-
-        .auth-warning {
-            background: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔐 Panel Admin</h1>
-            <p>Gestion des clients et fichiers</p>
-        </div>
-
-        <div class="admin-section">
-            <div class="auth-warning">
-                ⚠️ Sauvegardez votre clé admin dans le fichier .env : ADMIN_KEY=votre_cle_secrete
-            </div>
-
+        <h1>🔐 V3Clix Admin</h1>
+        
+        <!-- Section de connexion -->
+        <div class="login-section active">
+            <div id="error-message" class="error"></div>
+            
             <div class="form-group">
-                <label>Clé Admin</label>
-                <input type="password" id="adminKey" placeholder="Entrez votre clé admin">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" placeholder="Entrez votre nom d'utilisateur">
             </div>
-
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('clients')">👥 Clients</button>
-                <button class="tab" onclick="switchTab('files')">📁 Fichiers</button>
+            
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" placeholder="Entrez votre mot de passe">
             </div>
-
-            <div id="clientsTab" class="tab-content active">
-                <h2>Créer un nouveau client</h2>
-                <div id="clientAlert"></div>
-                
-                <div class="form-group">
-                    <label>Email du client</label>
-                    <input type="email" id="clientEmail" placeholder="client@example.com">
-                </div>
-
-                <button class="btn btn-success" onclick="createClient()">
-                    ➕ Créer le client
-                </button>
-
-                <h2 style="margin-top: 40px;">Liste des clients</h2>
-                <div id="clientsList" class="client-list">
-                    <p style="color: #666;">Aucun client pour le moment</p>
-                </div>
-            </div>
-
-            <div id="filesTab" class="tab-content">
-                <h2>Ajouter un fichier/dossier</h2>
-                <div id="fileAlert"></div>
-
-                <div class="form-group">
-                    <label>Nom (affiché aux clients)</label>
-                    <input type="text" id="fileName" placeholder="Mon Fichier.zip">
-                </div>
-
-                <div class="form-group">
-                    <label>Chemin dans le stockage (relatif à STORAGE_PATH)</label>
-                    <input type="text" id="filePath" placeholder="dossier/fichier.zip">
-                </div>
-
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="fileType">
-                        <option value="file">📄 Fichier</option>
-                        <option value="folder">📁 Dossier</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Taille (octets) - optionnel</label>
-                    <input type="number" id="fileSize" placeholder="1073741824">
-                </div>
-
-                <div class="form-group">
-                    <label>Catégorie</label>
-                    <input type="text" id="fileCategory" placeholder="Ressources, Templates, etc.">
-                </div>
-
-                <button class="btn btn-success" onclick="addFile()">
-                    ➕ Ajouter le fichier
-                </button>
-
-                <h2 style="margin-top: 40px;">Fichiers disponibles</h2>
-                <div id="filesList" class="file-list">
-                    <p style="color: #666;">Aucun fichier pour le moment</p>
-                </div>
-            </div>
+            
+            <button onclick="authenticate()">Se connecter</button>
+        </div>
+        
+        <!-- Section dashboard (après connexion) -->
+        <div class="dashboard-section">
+            <div id="success-message" class="success"></div>
+            <div class="loading" id="loading">Chargement...</div>
+            
+            <h2 style="color: #667eea; margin-bottom: 20px;">📁 Mes fichiers</h2>
+            <div id="files-container"></div>
+            
+            <button class="logout-btn" onclick="logout()">Déconnexion</button>
         </div>
     </div>
 
     <script>
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
-        }
+        // ========================================
+        // CONFIGURATION - Le token sera généré automatiquement
+        // ========================================
+        const API_BASE_URL = window.location.origin; // Utilise l'URL actuelle
 
-        async function createClient() {
-            const email = document.getElementById('clientEmail').value.trim();
-            const adminKey = document.getElementById('adminKey').value.trim();
-            const alertDiv = document.getElementById('clientAlert');
+        // ========================================
+        // Fonction d'authentification
+        // ========================================
+        async function authenticate() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorDiv = document.getElementById('error-message');
 
-            if (!email || !adminKey) {
-                alertDiv.innerHTML = '<div class="alert alert-error">Veuillez remplir tous les champs</div>';
+            // Validation
+            if (!username || !password) {
+                showError('Veuillez remplir tous les champs');
                 return;
             }
 
+            // Masquer les erreurs précédentes
+            errorDiv.classList.remove('show');
+
             try {
-                const response = await fetch('/api/admin/clients', {
+                const response = await fetch(`${API_BASE_URL}/api/auth`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, adminKey })
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    alertDiv.innerHTML = `
-                        <div class="alert alert-success">
-                            ✅ Client créé avec succès !<br>
-                            <strong>Token:</strong>
-                            <div class="token-display">${data.token}</div>
-                            <button class="btn btn-primary" style="margin-top: 10px;" onclick="copyToken('${data.token}')">
-                                📋 Copier le token
-                            </button>
-                        </div>
-                    `;
-                    document.getElementById('clientEmail').value = '';
-                    loadClients();
-                } else {
-                    alertDiv.innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
-                }
-            } catch (error) {
-                alertDiv.innerHTML = '<div class="alert alert-error">❌ Erreur de connexion</div>';
-            }
-        }
-
-        async function addFile() {
-            const name = document.getElementById('fileName').value.trim();
-            const path = document.getElementById('filePath').value.trim();
-            const type = document.getElementById('fileType').value;
-            const size = document.getElementById('fileSize').value;
-            const category = document.getElementById('fileCategory').value.trim();
-            const adminKey = document.getElementById('adminKey').value.trim();
-            const alertDiv = document.getElementById('fileAlert');
-
-            if (!name || !path || !adminKey) {
-                alertDiv.innerHTML = '<div class="alert alert-error">Veuillez remplir les champs obligatoires</div>';
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/admin/files', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name,
-                        path,
-                        type,
-                        size: size ? parseInt(size) : null,
-                        category: category || 'Autres',
-                        adminKey
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alertDiv.innerHTML = '<div class="alert alert-success">✅ Fichier ajouté avec succès !</div>';
-                    document.getElementById('fileName').value = '';
-                    document.getElementById('filePath').value = '';
-                    document.getElementById('fileSize').value = '';
-                    document.getElementById('fileCategory').value = '';
+                if (response.ok && data.success) {
+                    // Sauvegarder le token dans localStorage
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('username', username);
+                    
+                    console.log('✅ Authentification réussie');
+                    
+                    // Afficher le dashboard
+                    showDashboard();
+                    
+                    // Charger les fichiers
                     loadFiles();
                 } else {
-                    alertDiv.innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
+                    showError(data.message || data.error || 'Identifiants incorrects');
                 }
             } catch (error) {
-                alertDiv.innerHTML = '<div class="alert alert-error">❌ Erreur de connexion</div>';
+                console.error('❌ Erreur:', error);
+                showError('Erreur de connexion au serveur. Vérifiez votre connexion.');
             }
         }
 
-        async function loadClients() {
-            // Note: Dans un vrai système, il faudrait une route admin sécurisée pour lister les clients
-            document.getElementById('clientsList').innerHTML = '<p style="color: #666;">Rechargez la page pour voir les nouveaux clients</p>';
-        }
-
+        // ========================================
+        // Fonction pour charger les fichiers
+        // ========================================
         async function loadFiles() {
-            document.getElementById('filesList').innerHTML = '<p style="color: #666;">Rechargez la page pour voir les nouveaux fichiers</p>';
+            const token = localStorage.getItem('authToken');
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('files-container');
+
+            if (!token) {
+                showError('Vous devez vous connecter d\'abord');
+                showLogin();
+                return;
+            }
+
+            // Afficher le loader
+            loading.classList.add('show');
+            container.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/files`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                loading.classList.remove('show');
+
+                if (response.ok && data.success) {
+                    console.log('✅ Fichiers chargés:', data.files);
+                    displayFiles(data.files);
+                } else {
+                    showError(data.message || data.error || 'Erreur lors du chargement');
+                    
+                    // Si le token est invalide, redemander la connexion
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        showError('Session expirée, veuillez vous reconnecter');
+                        setTimeout(showLogin, 2000);
+                    }
+                }
+            } catch (error) {
+                loading.classList.remove('show');
+                console.error('❌ Erreur:', error);
+                showError('Erreur lors du chargement des fichiers');
+            }
         }
 
-        function copyToken(token) {
-            navigator.clipboard.writeText(token).then(() => {
-                alert('✅ Token copié dans le presse-papiers !');
+        // ========================================
+        // Fonction pour afficher les fichiers
+        // ========================================
+        function displayFiles(files) {
+            const container = document.getElementById('files-container');
+            
+            if (!files || files.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">Aucun fichier disponible</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            files.forEach(file => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'file-item';
+                fileElement.innerHTML = `
+                    <h3>📄 ${file.name}</h3>
+                    <p>Taille: ${formatFileSize(file.size)}</p>
+                    <p>Date: ${formatDate(file.date)}</p>
+                `;
+                container.appendChild(fileElement);
             });
         }
+
+        // ========================================
+        // Fonctions utilitaires
+        // ========================================
+        function showDashboard() {
+            document.querySelector('.login-section').classList.remove('active');
+            document.querySelector('.dashboard-section').classList.add('active');
+            
+            const username = localStorage.getItem('username');
+            showSuccess(`Bienvenue ${username} ! 👋`);
+        }
+
+        function showLogin() {
+            document.querySelector('.dashboard-section').classList.remove('active');
+            document.querySelector('.login-section').classList.add('active');
+            
+            // Réinitialiser les champs
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+            showLogin();
+            showSuccess('Déconnexion réussie');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => errorDiv.classList.remove('show'), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = message;
+            successDiv.classList.add('show');
+            setTimeout(() => successDiv.classList.remove('show'), 3000);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Permettre de se connecter avec la touche Entrée
+        document.getElementById('password')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                authenticate();
+            }
+        });
+
+        // ========================================
+        // Vérifier si déjà connecté au chargement
+        // ========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                console.log('✅ Token trouvé, connexion automatique...');
+                showDashboard();
+                loadFiles();
+            }
+        });
     </script>
 </body>
 </html>
