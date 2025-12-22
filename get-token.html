@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obtenir mon Token</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .token-result {
+            display: none;
+            background: #f0f7ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .token-result.show {
+            display: block;
+        }
+        .token-value {
+            background: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        .copy-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            margin-top: 10px;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #c33;
+        }
+        .error.show {
+            display: block;
+        }
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .info-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 Obtenir mon Token</h1>
+        <p class="subtitle">Générez votre token d'accès pour V3Clix</p>
+        
+        <div class="info-box">
+            <strong>ℹ️ Comment ça marche ?</strong>
+            Entrez vos identifiants admin pour générer votre token d'accès. 
+            Ce token vous permettra de vous connecter à votre boutique.
+        </div>
+        
+        <div id="error-message" class="error"></div>
+        
+        <div class="form-group">
+            <label for="username">👤 Nom d'utilisateur</label>
+            <input type="text" id="username" placeholder="admin" value="admin">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">🔒 Mot de passe</label>
+            <input type="password" id="password" placeholder="Votre mot de passe">
+        </div>
+        
+        <button onclick="getToken()">🚀 Générer mon token</button>
+        
+        <div class="token-result" id="token-result">
+            <h3 style="color: #667eea; margin-bottom: 10px;">✅ Voici votre token :</h3>
+            <div class="token-value" id="token-value"></div>
+            <button class="copy-btn" onclick="copyToken()">📋 Copier le token</button>
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                <strong>Comment l'utiliser :</strong><br>
+                1. Copiez ce token<br>
+                2. Allez sur la page principale<br>
+                3. Collez-le dans le champ "Token"<br>
+                4. Cliquez sur "Se connecter"
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = '';
+
+        async function getToken() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorDiv = document.getElementById('error-message');
+            const resultDiv = document.getElementById('token-result');
+
+            // Validation
+            if (!username || !password) {
+                showError('Veuillez remplir tous les champs');
+                return;
+            }
+
+            // Masquer les messages précédents
+            errorDiv.classList.remove('show');
+            resultDiv.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success && data.token) {
+                    // Afficher le token
+                    currentToken = data.token;
+                    document.getElementById('token-value').textContent = data.token;
+                    resultDiv.classList.add('show');
+                    
+                    console.log('✅ Token généré avec succès');
+                } else {
+                    showError(data.message || data.error || 'Identifiants incorrects. Vérifiez vos credentials sur Vercel.');
+                }
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                showError('Erreur de connexion. Vérifiez que l\'API est bien déployée sur Vercel.');
+            }
+        }
+
+        function copyToken() {
+            if (!currentToken) return;
+
+            // Copier dans le presse-papiers
+            navigator.clipboard.writeText(currentToken).then(() => {
+                // Changer le texte du bouton temporairement
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copié !';
+                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+                }, 2000);
+
+                console.log('✅ Token copié dans le presse-papiers');
+            }).catch(err => {
+                console.error('Erreur de copie:', err);
+                showError('Impossible de copier. Sélectionnez et copiez manuellement.');
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.classList.add('show');
+            setTimeout(() => errorDiv.classList.remove('show'), 6000);
+        }
+
+        // Permettre de valider avec Entrée
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                getToken();
+            }
+        });
+
+        // Focus automatique sur le champ username
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('username').focus();
+        });
+    </script>
+</body>
+</html>
