@@ -1,88 +1,107 @@
-// api/files.js - Route Vercel Serverless
-export default async function handler(req, res) {
+// api/files.js - Version simplifiée et testée pour Vercel
+
+export default function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Handle OPTIONS request
+  // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  // Vérifier le token d'authentification
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.split(' ')[1]; // Format: "Bearer TOKEN"
+  try {
+    // Check authentication
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '');
+    const validToken = process.env.API_TOKEN || 'default_token_change_me';
 
-  // Remplacez par votre vrai token ou utilisez une variable d'environnement
-  const VALID_TOKEN = process.env.API_TOKEN || 'votre-token-secret';
+    if (!token || token !== validToken) {
+      res.status(401).json({ 
+        error: 'Token invalide',
+        message: 'Authentification requise'
+      });
+      return;
+    }
 
-  if (!token || token !== VALID_TOKEN) {
-    return res.status(401).json({ 
-      error: 'Token invalide',
-      message: 'Authentification requise' 
-    });
-  }
-
-  // Gérer les requêtes GET pour lister les fichiers
-  if (req.method === 'GET') {
-    try {
-      // Exemple de données - remplacez par votre vraie logique
+    // Handle GET request
+    if (req.method === 'GET') {
+      // Mock data - remplacez par votre vraie logique
       const files = [
-        { id: 1, name: 'document1.pdf', size: 1024, date: new Date().toISOString() },
-        { id: 2, name: 'image.jpg', size: 2048, date: new Date().toISOString() }
+        {
+          id: 1,
+          name: 'Pack Premium.zip',
+          size: 15728640, // 15 MB
+          date: new Date().toISOString(),
+          type: 'pack',
+          downloads: 42
+        },
+        {
+          id: 2,
+          name: 'Guide Complet.pdf',
+          size: 2097152, // 2 MB
+          date: new Date(Date.now() - 86400000).toISOString(),
+          type: 'document',
+          downloads: 18
+        },
+        {
+          id: 3,
+          name: 'Templates Pro.zip',
+          size: 5242880, // 5 MB
+          date: new Date(Date.now() - 172800000).toISOString(),
+          type: 'pack',
+          downloads: 27
+        }
       ];
 
-      return res.status(200).json({ 
-        success: true, 
-        files 
+      res.status(200).json({
+        success: true,
+        files: files,
+        total: files.length
       });
-    } catch (error) {
-      console.error('Erreur lors de la récupération des fichiers:', error);
-      return res.status(500).json({ 
-        error: 'Erreur serveur', 
-        message: error.message 
-      });
+      return;
     }
-  }
 
-  // Gérer les requêtes POST pour uploader des fichiers
-  if (req.method === 'POST') {
-    try {
-      const { fileName, fileData } = req.body;
+    // Handle POST request (upload)
+    if (req.method === 'POST') {
+      const { fileName, fileData, fileType } = req.body;
 
-      if (!fileName || !fileData) {
-        return res.status(400).json({ 
+      if (!fileName) {
+        res.status(400).json({
           error: 'Données manquantes',
-          message: 'fileName et fileData sont requis' 
+          message: 'fileName requis'
         });
+        return;
       }
 
-      // Logique de sauvegarde du fichier
-      // Note: Sur Vercel, vous devez utiliser un service externe comme:
-      // - Vercel Blob Storage
-      // - AWS S3
-      // - Cloudinary
-      // Car le système de fichiers est en lecture seule
-
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Fichier uploadé avec succès',
-        file: { name: fileName, uploadedAt: new Date().toISOString() }
+      // Simuler un upload réussi
+      res.status(200).json({
+        success: true,
+        message: 'Fichier uploadé',
+        file: {
+          id: Date.now(),
+          name: fileName,
+          type: fileType || 'unknown',
+          uploadedAt: new Date().toISOString()
+        }
       });
-    } catch (error) {
-      console.error('Erreur lors de l\'upload:', error);
-      return res.status(500).json({ 
-        error: 'Erreur serveur', 
-        message: error.message 
-      });
+      return;
     }
-  }
 
-  // Méthode non supportée
-  return res.status(405).json({ 
-    error: 'Méthode non autorisée',
-    allowedMethods: ['GET', 'POST', 'OPTIONS']
-  });
+    // Method not allowed
+    res.status(405).json({
+      error: 'Méthode non autorisée',
+      allowedMethods: ['GET', 'POST']
+    });
+
+  } catch (error) {
+    console.error('Error in files:', error);
+    res.status(500).json({
+      error: 'Erreur serveur',
+      message: error.message
+    });
+  }
 }
