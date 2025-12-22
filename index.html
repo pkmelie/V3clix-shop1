@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pack Builder - Créez votre pack personnalisé</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .auth-section input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .auth-section button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .auth-section button:hover {
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .files-section {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .category {
+            margin-bottom: 30px;
+        }
+
+        .category h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .file-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .file-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .selection-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .selection-info {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .create-pack-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .create-pack-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .create-pack-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .download-link {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        .copy-btn {
+            padding: 10px 30px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+
+        .close-btn {
+            padding: 10px 30px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎁 Pack Builder</h1>
+            <p>Créez votre pack personnalisé en sélectionnant les fichiers de votre choix</p>
+        </div>
+
+        <div class="auth-section" id="authSection">
+            <h2 style="margin-bottom: 20px; color: #333;">Connexion</h2>
+            <input type="text" id="tokenInput" placeholder="Entrez votre token d'accès">
+            <button onclick="authenticate()">Se connecter</button>
+            <div id="authError"></div>
+        </div>
+
+        <div class="main-content" id="mainContent">
+            <div class="files-section">
+                <h2 style="margin-bottom: 20px; color: #333;">Sélectionnez vos fichiers</h2>
+                <div id="filesContainer"></div>
+            </div>
+        </div>
+
+        <div class="selection-bar" id="selectionBar">
+            <div class="selection-info" id="selectionInfo">0 fichier(s) sélectionné(s)</div>
+            <button class="create-pack-btn" onclick="createPack()" id="createPackBtn">
+                Créer mon pack
+            </button>
+        </div>
+
+        <div class="modal" id="packModal">
+            <div class="modal-content">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Création de votre pack en cours...</p>
+                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                        Cela peut prendre quelques minutes selon la taille des fichiers.
+                    </p>
+                </div>
+                <div id="packResult" style="display: none;">
+                    <h2>✅ Pack créé avec succès !</h2>
+                    <p style="margin: 20px 0;">Votre lien de téléchargement :</p>
+                    <div class="download-link" id="downloadLink"></div>
+                    <p style="font-size: 14px; color: #666; margin: 10px 0;">
+                        ⏰ Ce lien expirera dans 48 heures
+                    </p>
+                    <button class="copy-btn" onclick="copyLink()">📋 Copier le lien</button>
+                    <button class="close-btn" onclick="closeModal()">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userToken = '';
+        let selectedFiles = new Set();
+        let allFiles = [];
+
+        async function authenticate() {
+            const token = document.getElementById('tokenInput').value.trim();
+            const errorDiv = document.getElementById('authError');
+            
+            if (!token) {
+                errorDiv.innerHTML = '<div class="alert alert-error" style="margin-top: 15px;">Veuillez entrer votre token</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/files', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    userToken = token;
+                    allFiles = await response.json();
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                    displayFiles();
+                } else {
+                    errorDiv.innerHTML = '<div class="alert alert-error" style="margin-top: 15px;">Token invalide</div>';
+                }
+            } catch (error) {
+                errorDiv.innerHTML = '<div class="alert alert-error" style="margin-top: 15px;">Erreur de connexion</div>';
+            }
+        }
+
+        function displayFiles() {
+            const container = document.getElementById('filesContainer');
+            const categories = {};
+
+            allFiles.forEach(file => {
+                const cat = file.category || 'Autres';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(file);
+            });
+
+            container.innerHTML = '';
+            Object.keys(categories).sort().forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+                categoryDiv.innerHTML = `<h3>${category}</h3>`;
+
+                categories[category].forEach(file => {
+                    const fileDiv = document.createElement('div');
+                    fileDiv.className = 'file-item';
+                    const sizeStr = file.size ? formatBytes(file.size) : '';
+                    fileDiv.innerHTML = `
+                        <input type="checkbox" id="file-${file.id}" onchange="toggleFile(${file.id})">
+                        <div class="file-info">
+                            <div class="file-name">${file.type === 'folder' ? '📁' : '📄'} ${file.name}</div>
+                            ${sizeStr ? `<div class="file-size">${sizeStr}</div>` : ''}
+                        </div>
+                    `;
+                    categoryDiv.appendChild(fileDiv);
+                });
+
+                container.appendChild(categoryDiv);
+            });
+        }
+
+        function toggleFile(fileId) {
+            const checkbox = document.getElementById(`file-${fileId}`);
+            if (checkbox.checked) {
+                selectedFiles.add(fileId);
+            } else {
+                selectedFiles.delete(fileId);
+            }
+            updateSelection();
+        }
+
+        function updateSelection() {
+            const selectionBar = document.getElementById('selectionBar');
+            const selectionInfo = document.getElementById('selectionInfo');
+            const createBtn = document.getElementById('createPackBtn');
+
+            if (selectedFiles.size > 0) {
+                selectionBar.style.display = 'flex';
+                selectionInfo.textContent = `${selectedFiles.size} fichier(s) sélectionné(s)`;
+                createBtn.disabled = false;
+            } else {
+                selectionBar.style.display = 'none';
+                createBtn.disabled = true;
+            }
+        }
+
+        async function createPack() {
+            const modal = document.getElementById('packModal');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('packResult');
+
+            modal.style.display = 'flex';
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/packs/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`
+                    },
+                    body: JSON.stringify({
+                        fileIds: Array.from(selectedFiles),
+                        packName: `Pack ${new Date().toLocaleDateString()}`
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    loading.style.display = 'none';
+                    result.style.display = 'block';
+                    document.getElementById('downloadLink').textContent = data.downloadUrl;
+                    window.downloadUrl = data.downloadUrl;
+                } else {
+                    alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+                    modal.style.display = 'none';
+                }
+            } catch (error) {
+                alert('Erreur de connexion');
+                modal.style.display = 'none';
+            }
+        }
+
+        function copyLink() {
+            const link = window.downloadUrl;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('✅ Lien copié dans le presse-papiers !');
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('packModal').style.display = 'none';
+            selectedFiles.clear();
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            updateSelection();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
