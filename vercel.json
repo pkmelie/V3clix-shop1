@@ -3,16 +3,18 @@
   "buildCommand": null,
   "framework": null,
   "outputDirectory": ".",
-  "routes": [
+
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/index.html"
+      "source": "/",
+      "destination": "/index.html"
     },
     {
-      "src": "/admin",
-      "dest": "/admin.html"
+      "source": "/admin",
+      "destination": "/admin.html"
     }
   ],
+
   "headers": [
     {
       "source": "/api/(.*)",
