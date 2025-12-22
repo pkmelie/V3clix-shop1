@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pack Builder - Créez votre pack personnalisé</title>
+    <title>V3Clix Shop - Créez votre pack sur mesure</title>
+    <link rel="icon" href="data:,">
     <style>
         * {
             margin: 0;
@@ -23,150 +24,166 @@
             margin: 0 auto;
         }
 
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+        header {
             text-align: center;
-        }
-
-        .header h1 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            color: #666;
-        }
-
-        .auth-section {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .auth-section input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .auth-section button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
+            padding: 40px 20px;
         }
 
-        .auth-section button:hover {
-            transform: translateY(-2px);
+        header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
-        .main-content {
-            display: none;
+        header p {
+            font-size: 18px;
+            opacity: 0.9;
         }
 
-        .files-section {
+        .shop-container {
             background: white;
-            padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 20px;
         }
 
         .category {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
         }
 
-        .category h3 {
+        .category:last-child {
+            border-bottom: none;
+        }
+
+        .category h2 {
             color: #667eea;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .file-item {
+            margin-bottom: 20px;
+            font-size: 24px;
             display: flex;
             align-items: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .category-description {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .option-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
             transition: all 0.3s;
+            background: #fafafa;
         }
 
-        .file-item:hover {
-            background: #e9ecef;
-            transform: translateX(5px);
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
         }
 
-        .file-item input[type="checkbox"] {
+        .option-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .option-card input[type="checkbox"] {
+            margin-right: 10px;
             width: 20px;
             height: 20px;
-            margin-right: 15px;
             cursor: pointer;
         }
 
-        .file-info {
-            flex: 1;
-        }
-
-        .file-name {
+        .option-title {
             font-weight: 600;
             color: #333;
             margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .file-size {
-            font-size: 14px;
+        .option-description {
+            font-size: 13px;
             color: #666;
+            margin-top: 8px;
         }
 
-        .selection-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 20px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-            display: none;
+        .option-size {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .summary {
+            position: sticky;
+            bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .summary-content {
+            display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        .selection-info {
-            font-weight: 600;
-            color: #667eea;
+        .summary-info {
+            flex: 1;
+        }
+
+        .summary-info h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .summary-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .summary-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .create-pack-btn {
             padding: 15px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: white;
+            color: #667eea;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .create-pack-btn:hover {
             transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
 
         .create-pack-btn:disabled {
@@ -179,21 +196,37 @@
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
             z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
         }
 
         .modal-content {
             background: white;
-            padding: 40px;
             border-radius: 20px;
+            padding: 40px;
             max-width: 500px;
             width: 90%;
             text-align: center;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .modal-content h2 {
@@ -201,49 +234,14 @@
             margin-bottom: 20px;
         }
 
-        .download-link {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            word-break: break-all;
-            font-size: 14px;
-        }
-
-        .copy-btn {
-            padding: 10px 30px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px 5px;
-        }
-
-        .close-btn {
-            padding: 10px 30px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px 5px;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 20px auto;
         }
 
         @keyframes spin {
@@ -251,228 +249,315 @@
             100% { transform: rotate(360deg); }
         }
 
-        .alert {
-            padding: 15px;
+        .download-link {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
             border-radius: 10px;
-            margin-bottom: 20px;
+            font-weight: 600;
+            transition: transform 0.2s;
         }
 
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
+        .download-link:hover {
+            transform: translateY(-2px);
         }
 
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
+        .close-modal-btn {
+            padding: 10px 30px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        .error-message {
+            color: #c33;
+            background: #fee;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🎁 Pack Builder</h1>
-            <p>Créez votre pack personnalisé en sélectionnant les fichiers de votre choix</p>
-        </div>
+        <header>
+            <h1>🎁 V3Clix Shop</h1>
+            <p>Créez votre pack personnalisé en sélectionnant vos options préférées</p>
+        </header>
 
-        <div class="auth-section" id="authSection">
-            <h2 style="margin-bottom: 20px; color: #333;">Connexion</h2>
-            <input type="text" id="tokenInput" placeholder="Entrez votre token d'accès">
-            <button onclick="authenticate()">Se connecter</button>
-            <div id="authError"></div>
-        </div>
-
-        <div class="main-content" id="mainContent">
-            <div class="files-section">
-                <h2 style="margin-bottom: 20px; color: #333;">Sélectionnez vos fichiers</h2>
-                <div id="filesContainer"></div>
-            </div>
-        </div>
-
-        <div class="selection-bar" id="selectionBar">
-            <div class="selection-info" id="selectionInfo">0 fichier(s) sélectionné(s)</div>
-            <button class="create-pack-btn" onclick="createPack()" id="createPackBtn">
-                Créer mon pack
-            </button>
-        </div>
-
-        <div class="modal" id="packModal">
-            <div class="modal-content">
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Création de votre pack en cours...</p>
-                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
-                        Cela peut prendre quelques minutes selon la taille des fichiers.
-                    </p>
+        <div class="shop-container">
+            <!-- Catégorie 1: Templates -->
+            <div class="category">
+                <h2>📄 Templates & Designs</h2>
+                <p class="category-description">Choisissez les templates dont vous avez besoin</p>
+                <div class="options-grid" id="templates-grid">
+                    <!-- Options générées dynamiquement -->
                 </div>
-                <div id="packResult" style="display: none;">
-                    <h2>✅ Pack créé avec succès !</h2>
-                    <p style="margin: 20px 0;">Votre lien de téléchargement :</p>
-                    <div class="download-link" id="downloadLink"></div>
-                    <p style="font-size: 14px; color: #666; margin: 10px 0;">
-                        ⏰ Ce lien expirera dans 48 heures
-                    </p>
-                    <button class="copy-btn" onclick="copyLink()">📋 Copier le lien</button>
-                    <button class="close-btn" onclick="closeModal()">Fermer</button>
+            </div>
+
+            <!-- Catégorie 2: Plugins -->
+            <div class="category">
+                <h2>🔌 Plugins & Extensions</h2>
+                <p class="category-description">Sélectionnez les plugins pour enrichir votre pack</p>
+                <div class="options-grid" id="plugins-grid">
+                    <!-- Options générées dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Catégorie 3: Ressources -->
+            <div class="category">
+                <h2>🎨 Ressources Graphiques</h2>
+                <p class="category-description">Ajoutez des ressources graphiques à votre pack</p>
+                <div class="options-grid" id="resources-grid">
+                    <!-- Options générées dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Catégorie 4: Documentation -->
+            <div class="category">
+                <h2>📚 Guides & Documentation</h2>
+                <p class="category-description">Incluez des guides pour vous aider</p>
+                <div class="options-grid" id="docs-grid">
+                    <!-- Options générées dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Résumé et bouton -->
+            <div class="summary">
+                <div class="summary-content">
+                    <div class="summary-info">
+                        <h3>Votre sélection</h3>
+                        <div class="summary-stats">
+                            <div class="summary-stat">
+                                <span>📦</span>
+                                <span id="items-count">0 élément(s)</span>
+                            </div>
+                            <div class="summary-stat">
+                                <span>💾</span>
+                                <span id="total-size">0 MB</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="create-pack-btn" id="create-pack-btn" disabled onclick="createPack()">
+                        Créer mon pack
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal de création -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div id="modal-body">
+                <h2>Création de votre pack...</h2>
+                <div class="loading-spinner"></div>
+                <p>Veuillez patienter pendant que nous préparons votre pack personnalisé.</p>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let userToken = '';
-        let selectedFiles = new Set();
-        let allFiles = [];
-        
-        async function authenticate() {
-            const token = document.getElementById('tokenInput').value.trim();
-            const errorDiv = document.getElementById('authError');
-            
-            if (!token) {
-                errorDiv.innerHTML = '<div class="alert alert-error" style="margin-top: 15px;">Veuillez entrer votre token</div>';
-                return;
+        // Configuration du catalogue
+        const catalog = {
+            templates: [
+                { id: 'temp1', name: 'Template E-commerce Pro', size: 25, file: 'templates/ecommerce-pro.zip', description: 'Template moderne pour boutique en ligne' },
+                { id: 'temp2', name: 'Template Landing Page', size: 12, file: 'templates/landing-page.zip', description: 'Page d\'atterrissage optimisée' },
+                { id: 'temp3', name: 'Template Blog Premium', size: 18, file: 'templates/blog-premium.zip', description: 'Template de blog professionnel' },
+                { id: 'temp4', name: 'Template Portfolio', size: 15, file: 'templates/portfolio.zip', description: 'Présentation de vos projets' }
+            ],
+            plugins: [
+                { id: 'plug1', name: 'SEO Optimizer', size: 5, file: 'plugins/seo-optimizer.zip', description: 'Optimisation SEO automatique' },
+                { id: 'plug2', name: 'Analytics Pro', size: 8, file: 'plugins/analytics-pro.zip', description: 'Statistiques avancées' },
+                { id: 'plug3', name: 'Payment Gateway', size: 10, file: 'plugins/payment-gateway.zip', description: 'Intégration paiement' },
+                { id: 'plug4', name: 'Email Marketing', size: 7, file: 'plugins/email-marketing.zip', description: 'Campagnes email automatisées' }
+            ],
+            resources: [
+                { id: 'res1', name: 'Pack Icons Premium', size: 50, file: 'resources/icons-premium.zip', description: '1000+ icônes HD' },
+                { id: 'res2', name: 'Images Stock HD', size: 120, file: 'resources/images-stock.zip', description: '500 images haute résolution' },
+                { id: 'res3', name: 'Fonts Collection', size: 30, file: 'resources/fonts-collection.zip', description: '100 polices premium' },
+                { id: 'res4', name: 'UI Kit Complet', size: 45, file: 'resources/ui-kit.zip', description: 'Composants UI réutilisables' }
+            ],
+            docs: [
+                { id: 'doc1', name: 'Guide de démarrage', size: 2, file: 'docs/getting-started.pdf', description: 'Premiers pas avec vos outils' },
+                { id: 'doc2', name: 'Manuel avancé', size: 5, file: 'docs/advanced-manual.pdf', description: 'Techniques avancées' },
+                { id: 'doc3', name: 'Tutoriels vidéo', size: 85, file: 'docs/video-tutorials.zip', description: '10 heures de formation' },
+                { id: 'doc4', name: 'Support & FAQ', size: 1, file: 'docs/support-faq.pdf', description: 'Questions fréquentes' }
+            ]
+        };
+
+        // État de la sélection
+        let selectedItems = [];
+
+        // Initialisation
+        function init() {
+            renderCategory('templates', 'templates-grid');
+            renderCategory('plugins', 'plugins-grid');
+            renderCategory('resources', 'resources-grid');
+            renderCategory('docs', 'docs-grid');
+            updateSummary();
+        }
+
+        // Afficher une catégorie
+        function renderCategory(categoryKey, gridId) {
+            const grid = document.getElementById(gridId);
+            const items = catalog[categoryKey];
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.onclick = () => toggleSelection(item.id);
+
+                card.innerHTML = `
+                    <div class="option-title">
+                        <input type="checkbox" id="check-${item.id}" onclick="event.stopPropagation(); toggleSelection('${item.id}')">
+                        <label for="check-${item.id}">${item.name}</label>
+                    </div>
+                    <div class="option-description">${item.description}</div>
+                    <div class="option-size">Taille: ${item.size} MB</div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Basculer la sélection d'un élément
+        function toggleSelection(itemId) {
+            const checkbox = document.getElementById(`check-${itemId}`);
+            const card = checkbox.closest('.option-card');
+
+            if (selectedItems.includes(itemId)) {
+                selectedItems = selectedItems.filter(id => id !== itemId);
+                checkbox.checked = false;
+                card.classList.remove('selected');
+            } else {
+                selectedItems.push(itemId);
+                checkbox.checked = true;
+                card.classList.add('selected');
             }
 
+            updateSummary();
+        }
+
+        // Mettre à jour le résumé
+        function updateSummary() {
+            const count = selectedItems.length;
+            const totalSize = calculateTotalSize();
+
+            document.getElementById('items-count').textContent = `${count} élément(s)`;
+            document.getElementById('total-size').textContent = `${totalSize} MB`;
+
+            const btn = document.getElementById('create-pack-btn');
+            btn.disabled = count === 0;
+        }
+
+        // Calculer la taille totale
+        function calculateTotalSize() {
+            let total = 0;
+            Object.values(catalog).flat().forEach(item => {
+                if (selectedItems.includes(item.id)) {
+                    total += item.size;
+                }
+            });
+            return total;
+        }
+
+        // Créer le pack
+        async function createPack() {
+            if (selectedItems.length === 0) return;
+
+            // Afficher le modal de chargement
+            showModal('loading');
+
             try {
-                const response = await fetch('/api/files', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
+                // Récupérer les fichiers sélectionnés
+                const files = [];
+                Object.values(catalog).flat().forEach(item => {
+                    if (selectedItems.includes(item.id)) {
+                        files.push({
+                            id: item.id,
+                            name: item.name,
+                            file: item.file,
+                            size: item.size
+                        });
                     }
                 });
 
-                if (response.ok) {
-                    userToken = token;
-                    allFiles = await response.json();
-                    document.getElementById('authSection').style.display = 'none';
-                    document.getElementById('mainContent').style.display = 'block';
-                    displayFiles();
-                } else {
-                    errorDiv.innerHTML = '<div class="alert alert-error" style="margin-top: 15px;">Token invalide</div>';
-                }
-            } catch (error) {
-                errorDiv.innerHTML = '<div class="alert alert-error" style="margin-top: 15px;">Erreur de connexion</div>';
-            }
-        }
-
-        function displayFiles() {
-            const container = document.getElementById('filesContainer');
-            const categories = {};
-
-            allFiles.forEach(file => {
-                const cat = file.category || 'Autres';
-                if (!categories[cat]) categories[cat] = [];
-                categories[cat].push(file);
-            });
-
-            container.innerHTML = '';
-            Object.keys(categories).sort().forEach(category => {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'category';
-                categoryDiv.innerHTML = `<h3>${category}</h3>`;
-
-                categories[category].forEach(file => {
-                    const fileDiv = document.createElement('div');
-                    fileDiv.className = 'file-item';
-                    const sizeStr = file.size ? formatBytes(file.size) : '';
-                    fileDiv.innerHTML = `
-                        <input type="checkbox" id="file-${file.id}" onchange="toggleFile(${file.id})">
-                        <div class="file-info">
-                            <div class="file-name">${file.type === 'folder' ? '📁' : '📄'} ${file.name}</div>
-                            ${sizeStr ? `<div class="file-size">${sizeStr}</div>` : ''}
-                        </div>
-                    `;
-                    categoryDiv.appendChild(fileDiv);
-                });
-
-                container.appendChild(categoryDiv);
-            });
-        }
-
-        function toggleFile(fileId) {
-            const checkbox = document.getElementById(`file-${fileId}`);
-            if (checkbox.checked) {
-                selectedFiles.add(fileId);
-            } else {
-                selectedFiles.delete(fileId);
-            }
-            updateSelection();
-        }
-
-        function updateSelection() {
-            const selectionBar = document.getElementById('selectionBar');
-            const selectionInfo = document.getElementById('selectionInfo');
-            const createBtn = document.getElementById('createPackBtn');
-
-            if (selectedFiles.size > 0) {
-                selectionBar.style.display = 'flex';
-                selectionInfo.textContent = `${selectedFiles.size} fichier(s) sélectionné(s)`;
-                createBtn.disabled = false;
-            } else {
-                selectionBar.style.display = 'none';
-                createBtn.disabled = true;
-            }
-        }
-
-        async function createPack() {
-            const modal = document.getElementById('packModal');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('packResult');
-
-            modal.style.display = 'flex';
-            loading.style.display = 'block';
-            result.style.display = 'none';
-
-            try {
-                const response = await fetch('/api/packs/create', {
+                // Appeler l'API pour créer le pack
+                const response = await fetch('/api/create-pack', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${userToken}`
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        fileIds: Array.from(selectedFiles),
-                        packName: `Pack ${new Date().toLocaleDateString()}`
-                    })
+                    body: JSON.stringify({ files })
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    loading.style.display = 'none';
-                    result.style.display = 'block';
-                    document.getElementById('downloadLink').textContent = data.downloadUrl;
-                    window.downloadUrl = data.downloadUrl;
+                if (response.ok && data.success) {
+                    showModal('success', data.downloadUrl, data.packId);
                 } else {
-                    alert('Erreur: ' + (data.error || 'Erreur inconnue'));
-                    modal.style.display = 'none';
+                    showModal('error', data.message || 'Erreur lors de la création du pack');
                 }
             } catch (error) {
-                alert('Erreur de connexion');
-                modal.style.display = 'none';
+                console.error('Erreur:', error);
+                showModal('error', 'Erreur de connexion au serveur');
             }
         }
 
-        function copyLink() {
-            const link = window.downloadUrl;
-            navigator.clipboard.writeText(link).then(() => {
-                alert('✅ Lien copié dans le presse-papiers !');
-            });
+        // Afficher le modal
+        function showModal(type, url = null, packId = null) {
+            const modal = document.getElementById('modal');
+            const modalBody = document.getElementById('modal-body');
+
+            modal.classList.add('show');
+
+            if (type === 'loading') {
+                modalBody.innerHTML = `
+                    <h2>Création de votre pack...</h2>
+                    <div class="loading-spinner"></div>
+                    <p>Veuillez patienter pendant que nous préparons votre pack personnalisé.</p>
+                `;
+            } else if (type === 'success') {
+                modalBody.innerHTML = `
+                    <h2>✅ Pack créé avec succès !</h2>
+                    <p>Votre pack personnalisé est prêt.</p>
+                    <p><strong>ID du pack :</strong> ${packId}</p>
+                    <a href="${url}" class="download-link" download>📥 Télécharger mon pack</a>
+                    <p style="font-size: 13px; color: #666; margin-top: 15px;">
+                        ⏰ Ce lien expirera dans 48 heures
+                    </p>
+                    <button class="close-modal-btn" onclick="closeModal()">Fermer</button>
+                `;
+            } else if (type === 'error') {
+                modalBody.innerHTML = `
+                    <h2>❌ Erreur</h2>
+                    <div class="error-message">${url}</div>
+                    <button class="close-modal-btn" onclick="closeModal()">Fermer</button>
+                `;
+            }
         }
 
+        // Fermer le modal
         function closeModal() {
-            document.getElementById('packModal').style.display = 'none';
-            selectedFiles.clear();
-            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            updateSelection();
+            document.getElementById('modal').classList.remove('show');
+            // Réinitialiser la sélection
+            selectedItems = [];
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected');
+                card.querySelector('input[type="checkbox"]').checked = false;
+            });
+            updateSummary();
         }
 
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
+        // Lancer l'initialisation
+        init();
     </script>
 </body>
 </html>
