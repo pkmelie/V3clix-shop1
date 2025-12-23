@@ -22,6 +22,7 @@ export default async function handler(req, res) {
 
   try {
     const { email, name, productIds } = req.body;
+    console.log('paiement =', req.body);
 
     // Validation
     if (!email || !productIds || productIds.length === 0) {
