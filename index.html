@@ -382,7 +382,8 @@
 
                 if (data.success) {
                     catalog = data.catalog;
-                    
+                    console.log('📦 catalog =', catalog);
+
                     // Rendre chaque catégorie
                     renderCategory('templates', 'templates-grid');
                     renderCategory('plugins', 'plugins-grid');
