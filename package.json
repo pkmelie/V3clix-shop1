@@ -7,6 +7,6 @@
     "stripe": "^14.10.0",
     "aws-sdk": "^2.1520.0",
     "archiver": "^6.0.1",
-    "formidable": "^3.5.1"
+    "papaparse": "^5.4.1"
   }
 }

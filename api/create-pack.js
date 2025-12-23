@@ -1,11 +1,8 @@
-// api/create-pack.js - Création de packs avec Contabo Storage
+// api/create-pack.js - Création de packs avec Contabo + CSV
 
 import archiver from 'archiver';
-import { 
-  downloadFile, 
-  uploadFile, 
-  getSignedDownloadUrl 
-} from '../lib/contabo-storage.js';
+import { downloadFile, uploadFile, getSignedDownloadUrl } from '../lib/contabo-storage.js';
+import { getOrderByPaymentIntent, updateOrder, getProducts } from '../lib/csv-manager.js';
 
 export default async function handler(req, res) {
   // CORS
@@ -25,60 +22,90 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { files, paymentIntentId } = req.body;
+    const { paymentIntentId } = req.body;
 
-    // Validation
-    if (!files || !Array.isArray(files) || files.length === 0) {
+    if (!paymentIntentId) {
       res.status(400).json({
         success: false,
-        message: 'Aucun fichier sélectionné'
+        message: 'Payment Intent ID requis'
       });
       return;
     }
 
-    // Vérifier le paiement si un paymentIntentId est fourni
-    if (paymentIntentId) {
-      console.log('✅ Paiement validé:', paymentIntentId);
+    console.log(`🔄 Création du pack pour paiement: ${paymentIntentId}`);
+
+    // 1. Récupérer la commande depuis le CSV
+    const order = await getOrderByPaymentIntent(paymentIntentId);
+
+    if (!order) {
+      res.status(404).json({
+        success: false,
+        message: 'Commande introuvable'
+      });
+      return;
     }
 
-    // Générer un ID unique pour le pack
-    const packId = generatePackId();
-    const packName = `pack_${packId}`;
-    
-    console.log(`🔄 Création du pack ${packName} avec ${files.length} fichiers...`);
+    if (order.status !== 'paid' && order.status !== 'pending') {
+      res.status(400).json({
+        success: false,
+        message: 'Paiement non validé'
+      });
+      return;
+    }
 
-    // Créer un ZIP en mémoire
-    const archive = archiver('zip', {
-      zlib: { level: 9 } // Compression maximale
-    });
+    // Vérifier si le pack existe déjà
+    if (order.pack_id) {
+      res.status(200).json({
+        success: true,
+        packId: order.pack_id,
+        downloadUrl: order.download_url,
+        message: 'Pack déjà créé'
+      });
+      return;
+    }
 
+    console.log(`📦 Création du pack pour commande: ${order.order_number}`);
+
+    // 2. Récupérer les produits commandés
+    const productIds = order.items_ids ? order.items_ids.split(',') : [];
+    const products = await getProducts(productIds);
+
+    if (products.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'Aucun produit trouvé pour cette commande'
+      });
+      return;
+    }
+
+    console.log(`📦 ${products.length} fichiers à inclure dans le pack`);
+
+    // 3. Créer le ZIP en mémoire
+    const archive = archiver('zip', { zlib: { level: 9 } });
     const chunks = [];
     
     archive.on('data', chunk => chunks.push(chunk));
-    archive.on('error', err => {
-      throw err;
-    });
+    archive.on('error', err => { throw err; });
 
-    // Télécharger et ajouter chaque fichier au ZIP
     let successCount = 0;
     let totalSize = 0;
 
-    for (const file of files) {
+    // 4. Télécharger et ajouter chaque fichier au ZIP
+    for (const product of products) {
       try {
-        console.log(`📥 Téléchargement: ${file.file}`);
+        console.log(`📥 Téléchargement: ${product.file_path}`);
         
-        // Télécharger le fichier depuis Contabo
-        const fileBuffer = await downloadFile(file.file);
+        const fileBuffer = await downloadFile(product.file_path);
+        const fileName = product.file_path.split('/').pop();
         
-        // Ajouter au ZIP avec juste le nom (sans chemin)
-        const fileName = file.file.split('/').pop();
         archive.append(fileBuffer, { name: fileName });
         
         totalSize += fileBuffer.length;
         successCount++;
+        
         console.log(`✅ Ajouté: ${fileName} (${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
       } catch (error) {
-        console.warn(`⚠️ Fichier ignoré (erreur): ${file.file}`, error.message);
+        console.warn(`⚠️ Fichier ignoré: ${product.file_path}`, error.message);
       }
     }
 
@@ -90,39 +117,42 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Finaliser le ZIP
+    // 5. Finaliser le ZIP
     await archive.finalize();
-
-    // Créer le buffer final du ZIP
     const zipBuffer = Buffer.concat(chunks);
+    
     console.log(`📦 ZIP créé: ${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`);
 
-    // Uploader le pack sur Contabo
-    console.log('☁️ Upload du pack vers Contabo...');
-    const packKey = await uploadFile(zipBuffer, `${packName}.zip`, 'packs');
+    // 6. Générer un pack_id unique
+    const packId = 'pack_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+
+    // 7. Uploader le pack sur Contabo
+    const packFileName = `${order.order_number}.zip`;
+    const packKey = await uploadFile(zipBuffer, packFileName, 'packs');
     
-    // Générer une URL signée temporaire (48 heures)
+    console.log(`☁️ Pack uploadé: ${packKey}`);
+
+    // 8. Générer une URL signée (48 heures)
     const downloadUrl = await getSignedDownloadUrl(packKey, 172800);
 
-    // Enregistrer les métadonnées du pack
-    const packData = {
-      packId,
-      packKey,
-      files: files.map(f => f.id),
-      filesCount: successCount,
-      totalSize: zipBuffer.length,
-      paymentIntentId,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
-    };
+    // 9. Mettre à jour la commande dans le CSV
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48);
 
-    await savePack(packData);
+    await updateOrder(order.order_number, {
+      pack_id: packId,
+      pack_file_path: packKey,
+      download_url: downloadUrl,
+      total_size: zipBuffer.length,
+      status: 'completed',
+      paid_at: new Date().toISOString()
+    });
 
     console.log(`✅ Pack créé avec succès: ${packId}`);
 
     res.status(200).json({
       success: true,
-      packId,
+      packId: packId,
       downloadUrl,
       filesCount: successCount,
       totalSize: `${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`,
@@ -137,28 +167,4 @@ export default async function handler(req, res) {
       error: error.message
     });
   }
-}
-
-// Générer un ID unique
-function generatePackId() {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 8);
-  return `${timestamp}${random}`;
-}
-
-// Sauvegarder les infos du pack
-async function savePack(packData) {
-  // Dans un système réel, sauvegarder dans une base de données
-  // Pour l'instant, on log juste
-  console.log('💾 Pack sauvegardé:', {
-    packId: packData.packId,
-    filesCount: packData.filesCount,
-    size: `${(packData.totalSize / 1024 / 1024).toFixed(2)} MB`
-  });
-  
-  // Exemple avec Vercel KV (si vous l'utilisez)
-  // const kv = createClient({ ... });
-  // await kv.set(`pack:${packData.packId}`, JSON.stringify(packData));
-  
-  return true;
 }

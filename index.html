@@ -364,44 +364,40 @@
     </div>
 
     <script>
-        // Configuration du catalogue
-        const catalog = {
-            templates: [
-                { id: 'temp1', name: 'Template E-commerce Pro', size: 25, file: 'templates/ecommerce-pro.zip', description: 'Template moderne pour boutique en ligne' },
-                { id: 'temp2', name: 'Template Landing Page', size: 12, file: 'templates/landing-page.zip', description: 'Page d\'atterrissage optimisée' },
-                { id: 'temp3', name: 'Template Blog Premium', size: 18, file: 'templates/blog-premium.zip', description: 'Template de blog professionnel' },
-                { id: 'temp4', name: 'Template Portfolio', size: 15, file: 'templates/portfolio.zip', description: 'Présentation de vos projets' }
-            ],
-            plugins: [
-                { id: 'plug1', name: 'SEO Optimizer', size: 5, file: 'plugins/seo-optimizer.zip', description: 'Optimisation SEO automatique' },
-                { id: 'plug2', name: 'Analytics Pro', size: 8, file: 'plugins/analytics-pro.zip', description: 'Statistiques avancées' },
-                { id: 'plug3', name: 'Payment Gateway', size: 10, file: 'plugins/payment-gateway.zip', description: 'Intégration paiement' },
-                { id: 'plug4', name: 'Email Marketing', size: 7, file: 'plugins/email-marketing.zip', description: 'Campagnes email automatisées' }
-            ],
-            resources: [
-                { id: 'res1', name: 'Pack Icons Premium', size: 50, file: 'resources/icons-premium.zip', description: '1000+ icônes HD' },
-                { id: 'res2', name: 'Images Stock HD', size: 120, file: 'resources/images-stock.zip', description: '500 images haute résolution' },
-                { id: 'res3', name: 'Fonts Collection', size: 30, file: 'resources/fonts-collection.zip', description: '100 polices premium' },
-                { id: 'res4', name: 'UI Kit Complet', size: 45, file: 'resources/ui-kit.zip', description: 'Composants UI réutilisables' }
-            ],
-            docs: [
-                { id: 'doc1', name: 'Guide de démarrage', size: 2, file: 'docs/getting-started.pdf', description: 'Premiers pas avec vos outils' },
-                { id: 'doc2', name: 'Manuel avancé', size: 5, file: 'docs/advanced-manual.pdf', description: 'Techniques avancées' },
-                { id: 'doc3', name: 'Tutoriels vidéo', size: 85, file: 'docs/video-tutorials.zip', description: '10 heures de formation' },
-                { id: 'doc4', name: 'Support & FAQ', size: 1, file: 'docs/support-faq.pdf', description: 'Questions fréquentes' }
-            ]
-        };
-
-        // État de la sélection
+        // Catalogue chargé depuis l'API
+        let catalog = {};
         let selectedItems = [];
 
-        // Initialisation
-        function init() {
-            renderCategory('templates', 'templates-grid');
-            renderCategory('plugins', 'plugins-grid');
-            renderCategory('resources', 'resources-grid');
-            renderCategory('docs', 'docs-grid');
-            updateSummary();
+        // Initialisation - Charger le catalogue depuis Supabase
+        async function init() {
+            try {
+                // Afficher un loader
+                document.querySelectorAll('.options-grid').forEach(grid => {
+                    grid.innerHTML = '<p style="text-align: center; color: #999;">Chargement...</p>';
+                });
+
+                // Charger le catalogue depuis l'API
+                const response = await fetch('/api/products');
+                const data = await response.json();
+
+                if (data.success) {
+                    catalog = data.catalog;
+                    
+                    // Rendre chaque catégorie
+                    renderCategory('templates', 'templates-grid');
+                    renderCategory('plugins', 'plugins-grid');
+                    renderCategory('resources', 'resources-grid');
+                    renderCategory('docs', 'docs-grid');
+                    
+                    updateSummary();
+                    console.log('✅ Catalogue chargé:', data.stats);
+                } else {
+                    throw new Error('Erreur chargement catalogue');
+                }
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                alert('Erreur lors du chargement du catalogue. Veuillez rafraîchir la page.');
+            }
         }
 
         // Afficher une catégorie
@@ -474,7 +470,21 @@
 
             // Sauvegarder la sélection dans localStorage
             localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
-            localStorage.setItem('catalog', JSON.stringify(catalog));
+            
+            // Sauvegarder aussi le catalogue pour la page checkout
+            // (on ne sauvegarde que les IDs, on rechargera depuis l'API)
+            const selectedProducts = [];
+            selectedItems.forEach(itemId => {
+                for (const items of Object.values(catalog)) {
+                    const item = items.find(i => i.id === itemId);
+                    if (item) {
+                        selectedProducts.push(item);
+                        break;
+                    }
+                }
+            });
+            
+            localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
 
             // Rediriger vers la page de paiement
             window.location.href = '/checkout.html';
