@@ -372,18 +372,14 @@
         async function init() {
             try {
                 // Afficher un loader
-                document.querySelectorAll('.options-grid').forEach(grid => {
-                    grid.innerHTML = '<p style="text-align: center; color: #999;">Chargement...</p>';
-                });
+                
 
                 // Charger le catalogue depuis l'API
                 const response = await fetch('/api/products');
                 const data = await response.json();
 
                 if (data.success) {
-                    document.querySelectorAll('.options-grid').forEach(grid => {
-                        grid.innerHTML = '<p style="text-align: center; color: #999;"></p>';
-                    });
+                    
                     catalog = data.catalog;
                     console.log('📦 catalog =', catalog);
 
