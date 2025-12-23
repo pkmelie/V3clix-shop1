@@ -381,6 +381,9 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    document.querySelectorAll('.options-grid').forEach(grid => {
+                        grid.innerHTML = '<p style="text-align: center; color: #999;"></p>';
+                    });
                     catalog = data.catalog;
                     console.log('📦 catalog =', catalog);
 
