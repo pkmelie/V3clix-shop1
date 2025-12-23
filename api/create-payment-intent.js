@@ -3,6 +3,8 @@
 // Installer Stripe : npm install stripe
 // Ou utiliser l'import direct pour Vercel
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+console.log('Stripe key starts with:', process.env.STRIPE_SECRET_KEY?.slice(0, 8));
+
 
 export default async function handler(req, res) {
   // CORS
