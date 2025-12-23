@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Téléchargement - V3Clix Shop</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .success-container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .pack-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #999;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 18px 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .download-button:hover {
+            transform: translateY(-3px);
+        }
+
+        .expiry-notice {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 25px 0;
+            text-align: left;
+        }
+
+        .expiry-notice strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .expiry-notice p {
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            background: #e0e0e0;
+        }
+
+        .email-info {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .copy-link-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+
+        .copy-link-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .copy-link-btn.copied {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">✓</div>
+        
+        <h1>Paiement réussi !</h1>
+        <p class="subtitle">Votre pack personnalisé est prêt à être téléchargé</p>
+
+        <div class="pack-info">
+            <div class="info-row">
+                <span class="info-label">ID du pack</span>
+                <span class="info-value" id="pack-id">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fichiers inclus</span>
+                <span class="info-value" id="files-count">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Taille totale</span>
+                <span class="info-value" id="total-size">-</span>
+            </div>
+        </div>
+
+        <a href="#" class="download-button" id="download-btn">
+            📥 Télécharger mon pack
+        </a>
+
+        <div class="expiry-notice">
+            <strong>⏰ Attention</strong>
+            <p>Ce lien de téléchargement expirera dans <strong>48 heures</strong>. Assurez-vous de télécharger votre pack avant l'expiration.</p>
+        </div>
+
+        <div style="text-align: left; margin: 20px 0;">
+            <strong style="color: #666; font-size: 14px;">Lien de téléchargement :</strong>
+            <div style="display: flex; align-items: center; margin-top: 10px;">
+                <input type="text" id="download-url" readonly 
+                    style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13px; font-family: monospace;">
+                <button class="copy-link-btn" onclick="copyLink()">📋 Copier</button>
+            </div>
+        </div>
+
+        <p class="email-info">
+            📧 Un email de confirmation avec le lien de téléchargement a été envoyé à votre adresse.
+        </p>
+
+        <div class="actions">
+            <a href="/" class="btn btn-secondary">← Retour à la boutique</a>
+        </div>
+    </div>
+
+    <script>
+        // Récupérer les infos depuis localStorage
+        const downloadUrl = localStorage.getItem('downloadUrl');
+        const packId = localStorage.getItem('packId');
+        const selectedItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
+
+        // Afficher les infos
+        if (downloadUrl && packId) {
+            document.getElementById('pack-id').textContent = packId;
+            document.getElementById('files-count').textContent = selectedItems.length + ' fichier(s)';
+            
+            // Calculer la taille totale (simulé)
+            const totalSize = selectedItems.length * 25; // Moyenne 25MB par fichier
+            document.getElementById('total-size').textContent = totalSize + ' MB';
+
+            // Configurer les liens
+            const fullUrl = window.location.origin + downloadUrl;
+            document.getElementById('download-btn').href = downloadUrl;
+            document.getElementById('download-url').value = fullUrl;
+
+            // Nettoyer le localStorage après affichage
+            // localStorage.removeItem('selectedItems');
+            // localStorage.removeItem('catalog');
+        } else {
+            // Pas d'infos, rediriger vers la boutique
+            window.location.href = '/';
+        }
+
+        // Copier le lien
+        function copyLink() {
+            const input = document.getElementById('download-url');
+            const btn = event.target;
+            
+            input.select();
+            document.execCommand('copy');
+            
+            btn.textContent = '✓ Copié !';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.textContent = '📋 Copier';
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+
+        // Animation de confettis (optionnel)
+        function createConfetti() {
+            const colors = ['#667eea', '#764ba2', '#11998e', '#38ef7d'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.left = Math.random() * window.innerWidth + 'px';
+                    confetti.style.top = '-10px';
+                    confetti.style.opacity = '1';
+                    confetti.style.transition = 'all 3s ease-out';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.style.top = window.innerHeight + 'px';
+                        confetti.style.opacity = '0';
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 30);
+            }
+        }
+
+        // Lancer les confettis au chargement
+        createConfetti();
+    </script>
+</body>
+</html>

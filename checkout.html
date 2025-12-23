@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement - V3Clix Shop</title>
+    <link rel="icon" href="data:,">
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .checkout-container {
+            background: white;
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        @media (max-width: 768px) {
+            .checkout-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .order-summary {
+            background: #f8f9fa;
+            padding: 40px;
+        }
+
+        .order-summary h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .item-category {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+
+        .item-price {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .total-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #667eea;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .total-price {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .items-count {
+            color: #999;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .payment-form {
+            padding: 40px;
+        }
+
+        .payment-form h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #card-element {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+        }
+
+        #card-element.StripeElement--focus {
+            border-color: #667eea;
+        }
+
+        #card-errors {
+            color: #c33;
+            font-size: 14px;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        .pay-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 25px;
+        }
+
+        .pay-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .pay-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #667eea;
+            text-decoration: none;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="checkout-container">
+        <!-- Résumé de la commande -->
+        <div class="order-summary">
+            <h2>📦 Votre Pack</h2>
+            <div id="order-items">
+                <!-- Items générés dynamiquement -->
+            </div>
+            <div class="total-section">
+                <div class="total-row">
+                    <span>Total</span>
+                    <span class="total-price" id="total-price">0.00 €</span>
+                </div>
+                <div class="items-count" id="items-count">0 fichier(s) sélectionné(s)</div>
+            </div>
+        </div>
+
+        <!-- Formulaire de paiement -->
+        <div class="payment-form">
+            <div id="payment-section">
+                <h2>💳 Paiement</h2>
+                
+                <form id="payment-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="votre@email.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Nom complet</label>
+                        <input type="text" id="name" placeholder="Jean Dupont" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="card-element">Carte bancaire</label>
+                        <div id="card-element"></div>
+                        <div id="card-errors"></div>
+                    </div>
+
+                    <button type="submit" class="pay-button" id="pay-button">
+                        Payer <span id="button-price">0.00 €</span>
+                    </button>
+
+                    <div class="secure-badge">
+                        🔒 Paiement sécurisé par Stripe
+                    </div>
+                </form>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Traitement du paiement...</p>
+            </div>
+
+            <div class="success-message" id="success">
+                <div class="success-icon">✓</div>
+                <h2>Paiement réussi !</h2>
+                <p>Création de votre pack en cours...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Récupérer les données de la sélection depuis localStorage
+        const selectedItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
+        const catalog = JSON.parse(localStorage.getItem('catalog') || '{}');
+
+        // Configuration Stripe (remplacez par votre clé publique)
+        const stripe = Stripe('pk_test_VOTRE_CLE_PUBLIQUE_STRIPE');
+        const elements = stripe.elements();
+
+        // Configurer le style de la carte
+        const cardStyle = {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#333',
+                    fontFamily: '"Segoe UI", sans-serif',
+                    '::placeholder': {
+                        color: '#aab7c4',
+                    },
+                },
+                invalid: {
+                    color: '#c33',
+                },
+            },
+        };
+
+        const cardElement = elements.create('card', cardStyle);
+        cardElement.mount('#card-element');
+
+        // Gérer les erreurs de saisie
+        cardElement.on('change', (event) => {
+            const displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+
+        // Calculer et afficher le résumé
+        function displayOrderSummary() {
+            const container = document.getElementById('order-items');
+            let total = 0;
+            const pricePerItem = 5; // 5€ par fichier (modifiez selon vos tarifs)
+
+            if (selectedItems.length === 0) {
+                window.location.href = '/';
+                return;
+            }
+
+            selectedItems.forEach(itemId => {
+                // Trouver l'item dans le catalogue
+                let item = null;
+                let category = '';
+                
+                for (const [cat, items] of Object.entries(catalog)) {
+                    const found = items.find(i => i.id === itemId);
+                    if (found) {
+                        item = found;
+                        category = cat;
+                        break;
+                    }
+                }
+
+                if (item) {
+                    total += pricePerItem;
+                    
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'summary-item';
+                    itemDiv.innerHTML = `
+                        <div>
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-category">${getCategoryName(category)}</div>
+                        </div>
+                        <div class="item-price">${pricePerItem}.00 €</div>
+                    `;
+                    container.appendChild(itemDiv);
+                }
+            });
+
+            document.getElementById('total-price').textContent = `${total}.00 €`;
+            document.getElementById('button-price').textContent = `${total}.00 €`;
+            document.getElementById('items-count').textContent = `${selectedItems.length} fichier(s) sélectionné(s)`;
+        }
+
+        function getCategoryName(key) {
+            const names = {
+                templates: 'Templates',
+                plugins: 'Plugins',
+                resources: 'Ressources',
+                docs: 'Documentation'
+            };
+            return names[key] || key;
+        }
+
+        // Gérer la soumission du formulaire
+        const form = document.getElementById('payment-form');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const payButton = document.getElementById('pay-button');
+            const paymentSection = document.getElementById('payment-section');
+            const loadingSection = document.getElementById('loading');
+
+            payButton.disabled = true;
+
+            try {
+                // 1. Créer un PaymentIntent côté serveur
+                const email = document.getElementById('email').value;
+                const name = document.getElementById('name').value;
+                const amount = selectedItems.length * 500; // 5€ = 500 centimes
+
+                const response = await fetch('/api/create-payment-intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount,
+                        email,
+                        name,
+                        items: selectedItems
+                    }),
+                });
+
+                const { clientSecret, error } = await response.json();
+
+                if (error) {
+                    throw new Error(error);
+                }
+
+                // 2. Confirmer le paiement avec Stripe
+                paymentSection.style.display = 'none';
+                loadingSection.classList.add('show');
+
+                const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+                    clientSecret,
+                    {
+                        payment_method: {
+                            card: cardElement,
+                            billing_details: {
+                                name: name,
+                                email: email,
+                            },
+                        },
+                    }
+                );
+
+                if (stripeError) {
+                    throw new Error(stripeError.message);
+                }
+
+                // 3. Paiement réussi ! Créer le pack
+                loadingSection.classList.remove('show');
+                document.getElementById('success').classList.add('show');
+
+                // Attendre 2 secondes puis créer le pack
+                setTimeout(async () => {
+                    await createPackAfterPayment(paymentIntent.id);
+                }, 2000);
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur de paiement: ' + error.message);
+                payButton.disabled = false;
+                loadingSection.classList.remove('show');
+                paymentSection.style.display = 'block';
+            }
+        });
+
+        // Créer le pack après paiement réussi
+        async function createPackAfterPayment(paymentIntentId) {
+            try {
+                // Récupérer les fichiers sélectionnés
+                const files = [];
+                selectedItems.forEach(itemId => {
+                    for (const items of Object.values(catalog)) {
+                        const item = items.find(i => i.id === itemId);
+                        if (item) {
+                            files.push({
+                                id: item.id,
+                                name: item.name,
+                                file: item.file,
+                                size: item.size
+                            });
+                            break;
+                        }
+                    }
+                });
+
+                const response = await fetch('/api/create-pack', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        files,
+                        paymentIntentId 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Rediriger vers la page de succès avec le lien
+                    localStorage.setItem('downloadUrl', data.downloadUrl);
+                    localStorage.setItem('packId', data.packId);
+                    window.location.href = '/success.html';
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la création du pack');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Le paiement a réussi mais la création du pack a échoué. Contactez le support.');
+            }
+        }
+
+        // Initialiser
+        displayOrderSummary();
+    </script>
+</body>
+</html>

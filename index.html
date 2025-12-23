@@ -468,47 +468,16 @@
             return total;
         }
 
-        // Créer le pack
-        async function createPack() {
+        // Créer le pack (rediriger vers le paiement)
+        function createPack() {
             if (selectedItems.length === 0) return;
 
-            // Afficher le modal de chargement
-            showModal('loading');
+            // Sauvegarder la sélection dans localStorage
+            localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
+            localStorage.setItem('catalog', JSON.stringify(catalog));
 
-            try {
-                // Récupérer les fichiers sélectionnés
-                const files = [];
-                Object.values(catalog).flat().forEach(item => {
-                    if (selectedItems.includes(item.id)) {
-                        files.push({
-                            id: item.id,
-                            name: item.name,
-                            file: item.file,
-                            size: item.size
-                        });
-                    }
-                });
-
-                // Appeler l'API pour créer le pack
-                const response = await fetch('/api/create-pack', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ files })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    showModal('success', data.downloadUrl, data.packId);
-                } else {
-                    showModal('error', data.message || 'Erreur lors de la création du pack');
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                showModal('error', 'Erreur de connexion au serveur');
-            }
+            // Rediriger vers la page de paiement
+            window.location.href = '/checkout.html';
         }
 
         // Afficher le modal

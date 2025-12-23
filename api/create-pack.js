@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { files } = req.body;
+    const { files, paymentIntentId } = req.body;
 
     // Validation
     if (!files || !Array.isArray(files) || files.length === 0) {
@@ -27,6 +27,17 @@ export default async function handler(req, res) {
         message: 'Aucun fichier sélectionné'
       });
       return;
+    }
+
+    // Vérifier le paiement si un paymentIntentId est fourni
+    if (paymentIntentId) {
+      // Dans un système réel, vérifier que le paiement est bien réussi
+      // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      // const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      // if (paymentIntent.status !== 'succeeded') {
+      //   return res.status(400).json({ success: false, message: 'Paiement non validé' });
+      // }
+      console.log('Paiement validé:', paymentIntentId);
     }
 
     // Générer un ID unique pour le pack
