@@ -423,6 +423,7 @@
                 const email = document.getElementById('email').value;
                 const name = document.getElementById('name').value;
                 const amount = selectedItems.length * 500; // 5€ = 500 centimes
+                console.log('📤 Paiement envoyé:', { email, productIds });
 
                 const response = await fetch('/api/create-payment-intent', {
                     method: 'POST',
