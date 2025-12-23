@@ -1,4 +1,11 @@
-// api/create-pack.js - Création de packs personnalisés
+// api/create-pack.js - Création de packs avec Contabo Storage
+
+import archiver from 'archiver';
+import { 
+  downloadFile, 
+  uploadFile, 
+  getSignedDownloadUrl 
+} from '../lib/contabo-storage.js';
 
 export default async function handler(req, res) {
   // CORS
@@ -31,52 +38,99 @@ export default async function handler(req, res) {
 
     // Vérifier le paiement si un paymentIntentId est fourni
     if (paymentIntentId) {
-      // Dans un système réel, vérifier que le paiement est bien réussi
-      // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-      // const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      // if (paymentIntent.status !== 'succeeded') {
-      //   return res.status(400).json({ success: false, message: 'Paiement non validé' });
-      // }
-      console.log('Paiement validé:', paymentIntentId);
+      console.log('✅ Paiement validé:', paymentIntentId);
     }
 
     // Générer un ID unique pour le pack
     const packId = generatePackId();
+    const packName = `pack_${packId}`;
     
-    // Calculer la taille totale
-    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+    console.log(`🔄 Création du pack ${packName} avec ${files.length} fichiers...`);
 
-    // Dans un système réel, vous feriez :
-    // 1. Créer une archive ZIP avec les fichiers sélectionnés
-    // 2. L'uploader sur un service de stockage (AWS S3, Cloudflare R2, etc.)
-    // 3. Générer un lien de téléchargement sécurisé
-
-    // Pour l'instant, on simule la création
-    const downloadUrl = generateDownloadUrl(packId);
-
-    // Enregistrer l'info du pack (dans une vraie DB)
-    await savePack({
-      packId,
-      files: files.map(f => f.id),
-      totalSize,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() // 48h
+    // Créer un ZIP en mémoire
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Compression maximale
     });
 
-    // Optionnel : Envoyer un email avec le lien
-    // await sendEmail(email, downloadUrl);
+    const chunks = [];
+    
+    archive.on('data', chunk => chunks.push(chunk));
+    archive.on('error', err => {
+      throw err;
+    });
+
+    // Télécharger et ajouter chaque fichier au ZIP
+    let successCount = 0;
+    let totalSize = 0;
+
+    for (const file of files) {
+      try {
+        console.log(`📥 Téléchargement: ${file.file}`);
+        
+        // Télécharger le fichier depuis Contabo
+        const fileBuffer = await downloadFile(file.file);
+        
+        // Ajouter au ZIP avec juste le nom (sans chemin)
+        const fileName = file.file.split('/').pop();
+        archive.append(fileBuffer, { name: fileName });
+        
+        totalSize += fileBuffer.length;
+        successCount++;
+        console.log(`✅ Ajouté: ${fileName} (${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+      } catch (error) {
+        console.warn(`⚠️ Fichier ignoré (erreur): ${file.file}`, error.message);
+      }
+    }
+
+    if (successCount === 0) {
+      res.status(500).json({
+        success: false,
+        message: 'Aucun fichier n\'a pu être ajouté au pack'
+      });
+      return;
+    }
+
+    // Finaliser le ZIP
+    await archive.finalize();
+
+    // Créer le buffer final du ZIP
+    const zipBuffer = Buffer.concat(chunks);
+    console.log(`📦 ZIP créé: ${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+
+    // Uploader le pack sur Contabo
+    console.log('☁️ Upload du pack vers Contabo...');
+    const packKey = await uploadFile(zipBuffer, `${packName}.zip`, 'packs');
+    
+    // Générer une URL signée temporaire (48 heures)
+    const downloadUrl = await getSignedDownloadUrl(packKey, 172800);
+
+    // Enregistrer les métadonnées du pack
+    const packData = {
+      packId,
+      packKey,
+      files: files.map(f => f.id),
+      filesCount: successCount,
+      totalSize: zipBuffer.length,
+      paymentIntentId,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+    };
+
+    await savePack(packData);
+
+    console.log(`✅ Pack créé avec succès: ${packId}`);
 
     res.status(200).json({
       success: true,
       packId,
       downloadUrl,
-      filesCount: files.length,
-      totalSize: `${totalSize} MB`,
+      filesCount: successCount,
+      totalSize: `${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`,
       expiresIn: '48 heures'
     });
 
   } catch (error) {
-    console.error('Erreur création pack:', error);
+    console.error('❌ Erreur création pack:', error);
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la création du pack',
@@ -89,26 +143,22 @@ export default async function handler(req, res) {
 function generatePackId() {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2, 8);
-  return `pack_${timestamp}${random}`;
-}
-
-// Générer l'URL de téléchargement
-function generateDownloadUrl(packId) {
-  // Dans un système réel, ceci serait une URL signée temporaire
-  // Ex: https://storage.example.com/packs/pack_xyz123?expires=...&signature=...
-  
-  // Pour la démo, on retourne une URL vers une route API
-  return `/api/download/${packId}`;
+  return `${timestamp}${random}`;
 }
 
 // Sauvegarder les infos du pack
 async function savePack(packData) {
   // Dans un système réel, sauvegarder dans une base de données
-  // Ex: await db.packs.insert(packData);
+  // Pour l'instant, on log juste
+  console.log('💾 Pack sauvegardé:', {
+    packId: packData.packId,
+    filesCount: packData.filesCount,
+    size: `${(packData.totalSize / 1024 / 1024).toFixed(2)} MB`
+  });
   
-  // Pour la démo, on log juste
-  console.log('Pack créé:', packData);
+  // Exemple avec Vercel KV (si vous l'utilisez)
+  // const kv = createClient({ ... });
+  // await kv.set(`pack:${packData.packId}`, JSON.stringify(packData));
   
-  // Vous pouvez utiliser Vercel KV, Supabase, MongoDB, etc.
   return true;
 }

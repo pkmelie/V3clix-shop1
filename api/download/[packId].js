@@ -1,4 +1,6 @@
-// api/download/[packId].js - Téléchargement de pack
+// api/download/[packId].js - Téléchargement de pack depuis Contabo
+
+import { downloadFile, getSignedDownloadUrl } from '../../lib/contabo-storage.js';
 
 export default async function handler(req, res) {
   const { packId } = req.query;
@@ -9,7 +11,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Vérifier que le pack existe et n'est pas expiré
+    console.log(`📥 Demande de téléchargement: ${packId}`);
+
+    // Récupérer les infos du pack
     const pack = await getPack(packId);
 
     if (!pack) {
@@ -24,36 +28,30 @@ export default async function handler(req, res) {
     if (new Date(pack.expiresAt) < new Date()) {
       res.status(410).json({
         error: 'Pack expiré',
-        message: 'Ce lien de téléchargement a expiré'
+        message: 'Ce lien de téléchargement a expiré (48h dépassées)'
       });
       return;
     }
 
-    // Dans un système réel, vous feriez :
-    // 1. Récupérer le fichier ZIP depuis votre stockage
-    // 2. Le streamer au client
-    
-    // Exemple avec un fichier stocké :
+    console.log(`✅ Pack trouvé: ${pack.packKey}`);
+
+    // Option 1 : Rediriger vers l'URL signée Contabo (RECOMMANDÉ)
+    const signedUrl = await getSignedDownloadUrl(pack.packKey, 3600); // 1 heure
+    res.redirect(302, signedUrl);
+
+    // Option 2 : Streamer le fichier directement (plus lent mais plus de contrôle)
     /*
-    const fileStream = await getFileFromStorage(pack.storagePath);
+    const fileBuffer = await downloadFile(pack.packKey);
+    
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="pack-${packId}.zip"`);
-    fileStream.pipe(res);
+    res.setHeader('Content-Length', fileBuffer.length);
+    
+    res.status(200).send(fileBuffer);
     */
 
-    // Pour la démo, rediriger vers une page d'info
-    res.status(200).json({
-      message: 'Pack prêt au téléchargement',
-      packId,
-      files: pack.files,
-      totalSize: pack.totalSize,
-      createdAt: pack.createdAt,
-      expiresAt: pack.expiresAt,
-      note: 'Dans un système de production, le fichier ZIP serait téléchargé ici'
-    });
-
   } catch (error) {
-    console.error('Erreur téléchargement:', error);
+    console.error('❌ Erreur téléchargement:', error);
     res.status(500).json({
       error: 'Erreur serveur',
       message: error.message
@@ -64,15 +62,20 @@ export default async function handler(req, res) {
 // Récupérer les infos d'un pack
 async function getPack(packId) {
   // Dans un système réel, récupérer depuis la DB
-  // Ex: return await db.packs.findOne({ packId });
+  // Exemple avec Vercel KV:
+  // const kv = createClient({ ... });
+  // const packData = await kv.get(`pack:${packId}`);
+  // return packData ? JSON.parse(packData) : null;
   
   // Pour la démo, retourner des données fictives
+  // En production, ceci DOIT venir d'une vraie DB
   return {
     packId,
-    files: ['temp1', 'plug2', 'res1'],
-    totalSize: 80,
+    packKey: `packs/pack_${packId}.zip`,
+    files: [],
+    filesCount: 3,
+    totalSize: 50 * 1024 * 1024, // 50 MB
     createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-    storagePath: `packs/${packId}.zip`
+    expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
   };
 }

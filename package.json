@@ -2,7 +2,11 @@
   "name": "v3clix-shop",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "stripe": "^14.10.0"
+    "stripe": "^14.10.0",
+    "aws-sdk": "^2.1520.0",
+    "archiver": "^6.0.1",
+    "formidable": "^3.5.1"
   }
 }
