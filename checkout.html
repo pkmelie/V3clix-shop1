@@ -237,6 +237,32 @@
             font-size: 40px;
         }
 
+        .error-message {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            margin: 20px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-details {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
         .back-link {
             display: inline-block;
             color: #667eea;
@@ -301,13 +327,20 @@
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p>Traitement du paiement...</p>
+                <p id="loading-text">Traitement du paiement...</p>
             </div>
 
             <div class="success-message" id="success">
                 <div class="success-icon">✓</div>
                 <h2>Paiement réussi !</h2>
                 <p>Création de votre pack en cours...</p>
+            </div>
+
+            <div class="error-message" id="error">
+                <h2>⚠️ Une erreur est survenue</h2>
+                <p id="error-text"></p>
+                <div class="error-details" id="error-details"></div>
+                <button class="pay-button" onclick="location.reload()">Réessayer</button>
             </div>
         </div>
     </div>
@@ -317,7 +350,7 @@
         const selectedItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
         const selectedProducts = JSON.parse(localStorage.getItem('selectedProducts') || '[]');
 
-        // Configuration Stripe (remplacez par votre clé publique)
+        // Configuration Stripe
         const stripe = Stripe('pk_test_51Sdpo94joDytcB3q2KdE3GYq12weWtTYVZFR1Et1wfh77KLvXkn5Ek44emc9zYA9mlrf3UAnK34Tq7ADacSzymLS00KfxepnYv');
         const elements = stripe.elements();
 
@@ -351,6 +384,30 @@
             }
         });
 
+        // Fonction pour afficher les erreurs
+        function showError(message, details = null) {
+            console.error('Erreur:', message, details);
+            
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('payment-section').style.display = 'none';
+            document.getElementById('success').classList.remove('show');
+            
+            const errorDiv = document.getElementById('error');
+            const errorText = document.getElementById('error-text');
+            const errorDetails = document.getElementById('error-details');
+            
+            errorText.textContent = message;
+            
+            if (details) {
+                errorDetails.textContent = JSON.stringify(details, null, 2);
+                errorDetails.style.display = 'block';
+            } else {
+                errorDetails.style.display = 'none';
+            }
+            
+            errorDiv.classList.add('show');
+        }
+
         // Calculer et afficher le résumé
         function displayOrderSummary() {
             const container = document.getElementById('order-items');
@@ -362,7 +419,7 @@
             }
 
             selectedProducts.forEach(product => {
-                const itemPrice = product.price ? product.price * 100 : 500; // Prix en centimes
+                const itemPrice = product.price ? product.price * 100 : 500;
                 total += itemPrice;
                 
                 const itemDiv = document.createElement('div');
@@ -400,6 +457,7 @@
             const payButton = document.getElementById('pay-button');
             const paymentSection = document.getElementById('payment-section');
             const loadingSection = document.getElementById('loading');
+            const loadingText = document.getElementById('loading-text');
 
             payButton.disabled = true;
 
@@ -408,14 +466,9 @@
                 const email = document.getElementById('email').value;
                 const name = document.getElementById('name').value;
                 
-                // Calculer le montant total en centimes
-                const amount = selectedProducts.reduce((sum, p) => {
-                    const price = p.price ? p.price * 100 : 500;
-                    return sum + price;
-                }, 0);
-
-                // Extraire les IDs des produits
                 const productIds = selectedProducts.map(p => p.id);
+
+                console.log('🔄 Création du Payment Intent...', { email, name, productIds });
 
                 const response = await fetch('/api/create-payment-intent', {
                     method: 'POST',
@@ -429,15 +482,23 @@
                     }),
                 });
 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Erreur serveur: ${response.status}`);
+                }
+
                 const { clientSecret, error } = await response.json();
 
                 if (error) {
                     throw new Error(error);
                 }
 
+                console.log('✅ Payment Intent créé');
+
                 // 2. Confirmer le paiement avec Stripe
                 paymentSection.style.display = 'none';
                 loadingSection.classList.add('show');
+                loadingText.textContent = 'Traitement du paiement...';
 
                 const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
                     clientSecret,
@@ -456,27 +517,36 @@
                     throw new Error(stripeError.message);
                 }
 
+                console.log('✅ Paiement confirmé:', paymentIntent.id);
+
                 // 3. Paiement réussi ! Créer le pack
                 loadingSection.classList.remove('show');
                 document.getElementById('success').classList.add('show');
 
                 // Attendre 2 secondes puis créer le pack
                 setTimeout(async () => {
+                    loadingSection.classList.add('show');
+                    loadingText.textContent = 'Création de votre pack...';
+                    document.getElementById('success').classList.remove('show');
+                    
                     await createPackAfterPayment(paymentIntent.id);
                 }, 2000);
 
             } catch (error) {
-                console.error('Erreur:', error);
-                alert('Erreur de paiement: ' + error.message);
+                showError('Erreur de paiement: ' + error.message, { error: error.toString() });
                 payButton.disabled = false;
-                loadingSection.classList.remove('show');
-                paymentSection.style.display = 'block';
             }
         });
 
         // Créer le pack après paiement réussi
         async function createPackAfterPayment(paymentIntentId) {
+            const loadingText = document.getElementById('loading-text');
+            
             try {
+                console.log('📦 Création du pack pour:', paymentIntentId);
+                
+                loadingText.textContent = 'Création du pack en cours...';
+
                 const response = await fetch('/api/create-pack', {
                     method: 'POST',
                     headers: {
@@ -487,19 +557,35 @@
                     })
                 });
 
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                
+                let data;
+                try {
+                    data = await response.json();
+                    console.log('Response data:', data);
+                } catch (e) {
+                    console.error('Erreur parsing JSON:', e);
+                    throw new Error('Réponse serveur invalide');
+                }
 
                 if (response.ok && data.success) {
-                    // Rediriger vers la page de succès avec le lien
+                    console.log('✅ Pack créé avec succès');
                     localStorage.setItem('downloadUrl', data.downloadUrl);
                     localStorage.setItem('packId', data.packId);
                     window.location.href = '/success.html';
                 } else {
-                    throw new Error(data.message || 'Erreur lors de la création du pack');
+                    throw new Error(data.message || data.error || 'Erreur lors de la création du pack');
                 }
             } catch (error) {
-                console.error('Erreur:', error);
-                alert('Le paiement a réussi mais la création du pack a échoué. Contactez le support avec votre numéro de commande.');
+                console.error('❌ Erreur création pack:', error);
+                showError(
+                    'Le paiement a réussi mais la création du pack a échoué.',
+                    {
+                        paymentIntentId,
+                        error: error.message,
+                        suggestion: 'Contactez le support avec votre numéro de paiement: ' + paymentIntentId
+                    }
+                );
             }
         }
 

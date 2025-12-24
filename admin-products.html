@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Produits - V3Clix Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 20px;
+            margin: 20px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .status {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .file-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .file-item code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🛠️ Gestion des Produits</h1>
+            <p>Outils pour diagnostiquer et corriger les problèmes de fichiers</p>
+
+            <div class="section-title">🔍 Étape 1 : Vérifier Contabo</div>
+            <button class="btn" onclick="listContaboFiles()">📂 Lister les fichiers sur Contabo</button>
+            <button class="btn btn-secondary" onclick="testConnection()">🔌 Tester la connexion</button>
+            
+            <div id="contabo-status"></div>
+            <div id="contabo-files"></div>
+
+            <div class="section-title">📤 Étape 2 : Uploader des fichiers de test</div>
+            <button class="btn btn-success" onclick="uploadTestFiles()">⬆️ Créer et uploader des fichiers de test</button>
+            
+            <div id="upload-status"></div>
+
+            <div class="section-title">📊 Étape 3 : Vérifier les produits CSV</div>
+            <button class="btn" onclick="checkProducts()">📋 Vérifier les produits</button>
+            
+            <div id="products-status"></div>
+
+            <div class="section-title">🔧 Diagnostic complet</div>
+            <div class="stats" id="stats"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testConnection() {
+            const statusDiv = document.getElementById('contabo-status');
+            statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Test en cours...</p></div>';
+
+            try {
+                const response = await fetch('/api/test-storage');
+                const data = await response.json();
+
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="status success">
+                            ✅ Connexion Contabo réussie
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status error">
+                            ❌ Erreur de connexion
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Erreur: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function listContaboFiles() {
+            const filesDiv = document.getElementById('contabo-files');
+            filesDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Récupération des fichiers...</p></div>';
+
+            try {
+                const response = await fetch('/api/list-files');
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = `
+                        <div class="status success">
+                            ✅ ${data.totalFiles} fichier(s) trouvé(s) sur Contabo
+                        </div>
+                        <div class="file-list">
+                    `;
+
+                    if (data.totalFiles === 0) {
+                        html += '<p><strong>⚠️ Aucun fichier trouvé sur Contabo</strong></p>';
+                        html += '<p>Vous devez d\'abord uploader des fichiers de test.</p>';
+                    } else {
+                        // Afficher par dossier
+                        for (const [folder, files] of Object.entries(data.byFolder)) {
+                            html += `<h4>📁 ${folder}/</h4>`;
+                            files.forEach(file => {
+                                html += `
+                                    <div class="file-item">
+                                        <code>${file.key}</code><br>
+                                        <small>Taille: ${file.size} | Modifié: ${new Date(file.lastModified).toLocaleString('fr-FR')}</small>
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+
+                    html += '</div>';
+                    filesDiv.innerHTML = html;
+
+                    // Mise à jour des stats
+                    updateStats(data);
+                } else {
+                    filesDiv.innerHTML = `
+                        <div class="status error">
+                            ❌ Erreur: ${data.error}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                filesDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Erreur: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function uploadTestFiles() {
+            const statusDiv = document.getElementById('upload-status');
+            statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Création et upload en cours...</p></div>';
+
+            try {
+                const response = await fetch('/api/upload-test-files', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = `
+                        <div class="status success">
+                            ✅ ${data.message}
+                        </div>
+                        <div class="file-list">
+                    `;
+
+                    data.results.forEach(result => {
+                        if (result.success) {
+                            html += `
+                                <div class="file-item">
+                                    ✅ <code>${result.key}</code> - ${result.size}
+                                </div>
+                            `;
+                        } else {
+                            html += `
+                                <div class="file-item" style="border-left-color: #dc3545;">
+                                    ❌ <code>${result.file}</code> - ${result.error}
+                                </div>
+                            `;
+                        }
+                    });
+
+                    html += '</div>';
+                    html += '<p style="margin-top: 15px;"><strong>✨ Les fichiers sont maintenant prêts !</strong><br>Vous pouvez maintenant tester un paiement.</p>';
+                    statusDiv.innerHTML = html;
+
+                    // Actualiser la liste des fichiers
+                    setTimeout(() => listContaboFiles(), 1000);
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status error">
+                            ❌ Erreur: ${data.message}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Erreur: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function checkProducts() {
+            const statusDiv = document.getElementById('products-status');
+            statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Vérification des produits...</p></div>';
+
+            try {
+                const response = await fetch('/api/products');
+                const data = await response.json();
+
+                if (data.success && data.products) {
+                    let html = `
+                        <div class="status success">
+                            ✅ ${data.products.length} produit(s) dans le CSV
+                        </div>
+                        <div class="file-list">
+                    `;
+
+                    data.products.forEach(product => {
+                        html += `
+                            <div class="file-item">
+                                <strong>${product.name}</strong><br>
+                                ID: <code>${product.id}</code><br>
+                                Fichier: <code>${product.file_path}</code><br>
+                                Prix: ${product.price}€ | Catégorie: ${product.category}
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    statusDiv.innerHTML = html;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status warning">
+                            ⚠️ Impossible de vérifier les produits
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Erreur: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function updateStats(data) {
+            const statsDiv = document.getElementById('stats');
+            const folders = Object.keys(data.byFolder).length;
+            
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${data.totalFiles}</div>
+                    <div class="stat-label">Fichiers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${folders}</div>
+                    <div class="stat-label">Dossiers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.byFolder.templates?.length || 0}</div>
+                    <div class="stat-label">Templates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.byFolder.plugins?.length || 0}</div>
+                    <div class="stat-label">Plugins</div>
+                </div>
+            `;
+        }
+
+        // Auto-load au démarrage
+        window.onload = () => {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

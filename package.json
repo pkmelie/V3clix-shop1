@@ -1,11 +1,16 @@
 {
-  "name": "v3clix-shop",
+  "name": "v3clix-shop1",
   "version": "1.0.0",
-  "private": true,
+  "type": "module",
   "dependencies": {
-    "stripe": "^14.10.0",
-    "aws-sdk": "^2.1520.0",
-    "archiver": "^6.0.1",
-    "papaparse": "^5.4.1"
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+    "archiver": "^7.0.0",
+    "csv-parser": "^3.0.0",
+    "papaparse": "^5.4.1",
+    "stripe": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
