@@ -55,11 +55,18 @@
             font-weight: 600;
             margin-right: 10px;
             margin-bottom: 10px;
+            transition: all 0.3s ease;
         }
 
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .btn-secondary {
@@ -119,6 +126,7 @@
             padding: 2px 6px;
             border-radius: 3px;
             font-family: monospace;
+            font-size: 12px;
         }
 
         .loading {
@@ -147,6 +155,7 @@
             border-radius: 8px;
             overflow-x: auto;
             font-size: 12px;
+            line-height: 1.5;
         }
 
         .stats {
@@ -174,10 +183,27 @@
             opacity: 0.9;
             margin-top: 5px;
         }
+
+        .back-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="admin.html" class="back-link">← Retour au tableau de bord</a>
+
         <div class="card">
             <h1>🛠️ Gestion des Produits</h1>
             <p>Outils pour diagnostiquer et corriger les problèmes de fichiers</p>
@@ -205,13 +231,51 @@
     </div>
 
     <script>
+        // Configuration de base
+        const API_BASE = window.location.origin;
+
+        // Fonction helper pour les appels API
+        async function callAPI(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        // Désactiver un bouton pendant l'exécution
+        function setButtonLoading(buttonElement, loading) {
+            if (loading) {
+                buttonElement.disabled = true;
+                buttonElement.style.opacity = '0.6';
+            } else {
+                buttonElement.disabled = false;
+                buttonElement.style.opacity = '1';
+            }
+        }
+
         async function testConnection() {
             const statusDiv = document.getElementById('contabo-status');
+            const button = event.target;
+            
             statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Test en cours...</p></div>';
+            setButtonLoading(button, true);
 
             try {
-                const response = await fetch('/api/test-storage');
-                const data = await response.json();
+                const data = await callAPI('/api/test-storage');
 
                 if (data.success) {
                     statusDiv.innerHTML = `
@@ -234,16 +298,20 @@
                         ❌ Erreur: ${error.message}
                     </div>
                 `;
+            } finally {
+                setButtonLoading(button, false);
             }
         }
 
         async function listContaboFiles() {
             const filesDiv = document.getElementById('contabo-files');
+            const button = event.target;
+            
             filesDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Récupération des fichiers...</p></div>';
+            setButtonLoading(button, true);
 
             try {
-                const response = await fetch('/api/list-files');
-                const data = await response.json();
+                const data = await callAPI('/api/list-files');
 
                 if (data.success) {
                     let html = `
@@ -258,13 +326,14 @@
                         html += '<p>Vous devez d\'abord uploader des fichiers de test.</p>';
                     } else {
                         // Afficher par dossier
-                        for (const [folder, files] of Object.entries(data.byFolder)) {
+                        for (const [folder, files] of Object.entries(data.byFolder || {})) {
                             html += `<h4>📁 ${folder}/</h4>`;
                             files.forEach(file => {
+                                const date = new Date(file.lastModified).toLocaleString('fr-FR');
                                 html += `
                                     <div class="file-item">
                                         <code>${file.key}</code><br>
-                                        <small>Taille: ${file.size} | Modifié: ${new Date(file.lastModified).toLocaleString('fr-FR')}</small>
+                                        <small>Taille: ${file.size} | Modifié: ${date}</small>
                                     </div>
                                 `;
                             });
@@ -279,7 +348,7 @@
                 } else {
                     filesDiv.innerHTML = `
                         <div class="status error">
-                            ❌ Erreur: ${data.error}
+                            ❌ Erreur: ${data.error || 'Erreur inconnue'}
                         </div>
                         <pre>${JSON.stringify(data, null, 2)}</pre>
                     `;
@@ -290,18 +359,22 @@
                         ❌ Erreur: ${error.message}
                     </div>
                 `;
+            } finally {
+                setButtonLoading(button, false);
             }
         }
 
         async function uploadTestFiles() {
             const statusDiv = document.getElementById('upload-status');
+            const button = event.target;
+            
             statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Création et upload en cours...</p></div>';
+            setButtonLoading(button, true);
 
             try {
-                const response = await fetch('/api/upload-test-files', {
+                const data = await callAPI('/api/upload-test-files', {
                     method: 'POST'
                 });
-                const data = await response.json();
 
                 if (data.success) {
                     let html = `
@@ -331,12 +404,12 @@
                     html += '<p style="margin-top: 15px;"><strong>✨ Les fichiers sont maintenant prêts !</strong><br>Vous pouvez maintenant tester un paiement.</p>';
                     statusDiv.innerHTML = html;
 
-                    // Actualiser la liste des fichiers
+                    // Actualiser la liste des fichiers après 1 seconde
                     setTimeout(() => listContaboFiles(), 1000);
                 } else {
                     statusDiv.innerHTML = `
                         <div class="status error">
-                            ❌ Erreur: ${data.message}
+                            ❌ Erreur: ${data.message || 'Erreur inconnue'}
                         </div>
                         <pre>${JSON.stringify(data, null, 2)}</pre>
                     `;
@@ -347,16 +420,20 @@
                         ❌ Erreur: ${error.message}
                     </div>
                 `;
+            } finally {
+                setButtonLoading(button, false);
             }
         }
 
         async function checkProducts() {
             const statusDiv = document.getElementById('products-status');
+            const button = event.target;
+            
             statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Vérification des produits...</p></div>';
+            setButtonLoading(button, true);
 
             try {
-                const response = await fetch('/api/products');
-                const data = await response.json();
+                const data = await callAPI('/api/products');
 
                 if (data.success && data.products) {
                     let html = `
@@ -393,16 +470,18 @@
                         ❌ Erreur: ${error.message}
                     </div>
                 `;
+            } finally {
+                setButtonLoading(button, false);
             }
         }
 
         function updateStats(data) {
             const statsDiv = document.getElementById('stats');
-            const folders = Object.keys(data.byFolder).length;
+            const folders = data.byFolder ? Object.keys(data.byFolder).length : 0;
             
             statsDiv.innerHTML = `
                 <div class="stat-card">
-                    <div class="stat-number">${data.totalFiles}</div>
+                    <div class="stat-number">${data.totalFiles || 0}</div>
                     <div class="stat-label">Fichiers</div>
                 </div>
                 <div class="stat-card">
@@ -410,20 +489,20 @@
                     <div class="stat-label">Dossiers</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${data.byFolder.templates?.length || 0}</div>
+                    <div class="stat-number">${data.byFolder?.templates?.length || 0}</div>
                     <div class="stat-label">Templates</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${data.byFolder.plugins?.length || 0}</div>
+                    <div class="stat-number">${data.byFolder?.plugins?.length || 0}</div>
                     <div class="stat-label">Plugins</div>
                 </div>
             `;
         }
 
         // Auto-load au démarrage
-        window.onload = () => {
+        window.addEventListener('DOMContentLoaded', () => {
             testConnection();
-        };
+        });
     </script>
 </body>
 </html>
