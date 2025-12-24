@@ -315,10 +315,10 @@
     <script>
         // Récupérer les données de la sélection depuis localStorage
         const selectedItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
-        const catalog = JSON.parse(localStorage.getItem('catalog') || '{}');
+        const selectedProducts = JSON.parse(localStorage.getItem('selectedProducts') || '[]');
 
         // Configuration Stripe (remplacez par votre clé publique)
-        const stripe = Stripe('pk_test_51Sdpo94joDytcB3q2KdE3GYq12weWtTYVZFR1Et1wfh77KLvXkn5Ek44emc9zYA9mlrf3UAnK34Tq7ADacSzymLS00KfxepnYv');
+        const stripe = Stripe('pk_test_VOTRE_CLE_PUBLIQUE_STRIPE');
         const elements = stripe.elements();
 
         // Configurer le style de la carte
@@ -355,46 +355,31 @@
         function displayOrderSummary() {
             const container = document.getElementById('order-items');
             let total = 0;
-            const pricePerItem = 5; // 5€ par fichier (modifiez selon vos tarifs)
 
-            if (selectedItems.length === 0) {
+            if (selectedProducts.length === 0) {
                 window.location.href = '/';
                 return;
             }
 
-            selectedItems.forEach(itemId => {
-                // Trouver l'item dans le catalogue
-                let item = null;
-                let category = '';
+            selectedProducts.forEach(product => {
+                const itemPrice = product.price ? product.price * 100 : 500; // Prix en centimes
+                total += itemPrice;
                 
-                for (const [cat, items] of Object.entries(catalog)) {
-                    const found = items.find(i => i.id === itemId);
-                    if (found) {
-                        item = found;
-                        category = cat;
-                        break;
-                    }
-                }
-
-                if (item) {
-                    total += pricePerItem;
-                    
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'summary-item';
-                    itemDiv.innerHTML = `
-                        <div>
-                            <div class="item-name">${item.name}</div>
-                            <div class="item-category">${getCategoryName(category)}</div>
-                        </div>
-                        <div class="item-price">${pricePerItem}.00 €</div>
-                    `;
-                    container.appendChild(itemDiv);
-                }
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'summary-item';
+                itemDiv.innerHTML = `
+                    <div>
+                        <div class="item-name">${product.name}</div>
+                        <div class="item-category">${getCategoryName(product.category)}</div>
+                    </div>
+                    <div class="item-price">${(itemPrice / 100).toFixed(2)} €</div>
+                `;
+                container.appendChild(itemDiv);
             });
 
-            document.getElementById('total-price').textContent = `${total}.00 €`;
-            document.getElementById('button-price').textContent = `${total}.00 €`;
-            document.getElementById('items-count').textContent = `${selectedItems.length} fichier(s) sélectionné(s)`;
+            document.getElementById('total-price').textContent = `${(total / 100).toFixed(2)} €`;
+            document.getElementById('button-price').textContent = `${(total / 100).toFixed(2)} €`;
+            document.getElementById('items-count').textContent = `${selectedProducts.length} fichier(s) sélectionné(s)`;
         }
 
         function getCategoryName(key) {
@@ -422,8 +407,15 @@
                 // 1. Créer un PaymentIntent côté serveur
                 const email = document.getElementById('email').value;
                 const name = document.getElementById('name').value;
-                const amount = selectedItems.length * 500; // 5€ = 500 centimes
-                console.log('📤 Paiement envoyé:', { email, productIds });
+                
+                // Calculer le montant total en centimes
+                const amount = selectedProducts.reduce((sum, p) => {
+                    const price = p.price ? p.price * 100 : 500;
+                    return sum + price;
+                }, 0);
+
+                // Extraire les IDs des produits
+                const productIds = selectedProducts.map(p => p.id);
 
                 const response = await fetch('/api/create-payment-intent', {
                     method: 'POST',
@@ -431,10 +423,9 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        amount,
                         email,
                         name,
-                        items: selectedItems
+                        productIds
                     }),
                 });
 
@@ -486,30 +477,12 @@
         // Créer le pack après paiement réussi
         async function createPackAfterPayment(paymentIntentId) {
             try {
-                // Récupérer les fichiers sélectionnés
-                const files = [];
-                selectedItems.forEach(itemId => {
-                    for (const items of Object.values(catalog)) {
-                        const item = items.find(i => i.id === itemId);
-                        if (item) {
-                            files.push({
-                                id: item.id,
-                                name: item.name,
-                                file: item.file,
-                                size: item.size
-                            });
-                            break;
-                        }
-                    }
-                });
-
                 const response = await fetch('/api/create-pack', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ 
-                        files,
                         paymentIntentId 
                     })
                 });
@@ -526,7 +499,7 @@
                 }
             } catch (error) {
                 console.error('Erreur:', error);
-                alert('Le paiement a réussi mais la création du pack a échoué. Contactez le support.');
+                alert('Le paiement a réussi mais la création du pack a échoué. Contactez le support avec votre numéro de commande.');
             }
         }
 
